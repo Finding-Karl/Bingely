@@ -1,5 +1,6 @@
 module.exports = {
   getFirestore: () => ({}),
+  initializeFirestore: () => ({}),
   collection: () => ({}),
   doc: () => ({}),
   getDoc: async () => ({ exists: () => false, data: () => undefined }),
