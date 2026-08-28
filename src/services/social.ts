@@ -62,3 +62,10 @@ export function subscribeToFollowing(
     onChange(snapshot.docs.map(document => document.data() as FollowingEntry));
   });
 }
+
+export async function getFollowing(uid: string): Promise<FollowingEntry[]> {
+  const snapshot = await getDocs(
+    query(collection(db, 'users', uid, 'following'), orderBy('followedAt', 'desc')),
+  );
+  return snapshot.docs.map(document => document.data() as FollowingEntry);
+}

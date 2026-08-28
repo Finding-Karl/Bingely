@@ -1,4 +1,4 @@
-import { collection, doc, onSnapshot, orderBy, query, setDoc } from 'firebase/firestore';
+import { collection, doc, getDocs, onSnapshot, orderBy, query, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { RankedItem } from '../types/models';
 
@@ -45,4 +45,9 @@ export async function addRanking(
     rankedAt: Date.now(),
   });
   return id;
+}
+
+export async function getRankingsCount(uid: string): Promise<number> {
+  const snapshot = await getDocs(collection(db, 'users', uid, 'rankings'));
+  return snapshot.docs.length;
 }
