@@ -7,6 +7,7 @@ module.exports = {
     '^@env$': '<rootDir>/__mocks__/envMock.js',
     '^firebase/app$': '<rootDir>/__mocks__/firebaseApp.js',
     '^firebase/auth$': '<rootDir>/__mocks__/firebaseAuth.js',
+    '^@firebase/auth$': '<rootDir>/__mocks__/firebaseAuth.js',
     '^firebase/firestore$': '<rootDir>/__mocks__/firebaseFirestore.js',
     '^react-native-webview$': '<rootDir>/__mocks__/react-native-webview.js',
   },

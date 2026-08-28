@@ -1,6 +1,16 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { decode, encode } from 'base-64';
 import { FirebaseOptions, getApp, getApps, initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+// `@firebase/auth`'s package.json lists a `"types"` condition ahead of its
+// `"react-native"` condition in the exports map, so both Metro's and TS's
+// resolvers stop at the generic (non-RN) declaration file before ever reaching
+// the RN-specific one - even though Metro's *runtime* resolution (which ignores
+// the non-matching "types" condition) correctly loads the real RN build with a
+// working `getReactNativePersistence`. This is a types-only gap in the
+// published package, not a bug in this app - see firebase-js-sdk#7592.
+import { initializeAuth } from '@firebase/auth';
+// @ts-expect-error - not in the resolved .d.ts (see comment above); exists at runtime.
+import { getReactNativePersistence } from '@firebase/auth';
 import { FirestoreSettings, initializeFirestore } from 'firebase/firestore';
 import {
   FIREBASE_API_KEY,
@@ -48,10 +58,14 @@ export const isFirebaseConfigured = Boolean(FIREBASE_API_KEY && FIREBASE_PROJECT
 
 export const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-// NOTE (MVP): using the default in-memory auth persistence. Sessions won't
-// survive an app restart yet - wiring AsyncStorage-backed persistence is a
-// good fast-follow once a real Firebase project is connected.
-export const auth = getAuth(firebaseApp);
+// Persist the auth session to AsyncStorage so a JS reload / app restart
+// doesn't silently sign the user out. Without this, `getAuth()` defaults to
+// in-memory-only persistence - every reload looks like a fresh install, and
+// re-signing-up lands on a brand-new (empty) account while the old one's
+// data sits untouched in Firestore.
+export const auth = initializeAuth(firebaseApp, {
+  persistence: getReactNativePersistence(AsyncStorage),
+});
 
 // `experimentalForceLongPolling` isn't in the public FirestoreSettings type
 // (it's considered "experimental"), but the SDK honors it at runtime - this
