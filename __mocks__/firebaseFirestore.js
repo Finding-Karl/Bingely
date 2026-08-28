@@ -9,4 +9,8 @@ module.exports = {
   query: () => ({}),
   where: () => ({}),
   orderBy: () => ({}),
+  onSnapshot: (_query, onNext) => {
+    onNext({ docs: [] });
+    return () => {};
+  },
 };
