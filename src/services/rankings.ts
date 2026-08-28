@@ -13,14 +13,22 @@ export function subscribeToRankings(
   onChange: (items: RankedItem[]) => void,
 ): () => void {
   const rankingsQuery = query(collection(db, 'users', uid, 'rankings'), orderBy('score', 'desc'));
-  return onSnapshot(rankingsQuery, snapshot => {
-    onChange(
-      snapshot.docs.map(document => ({
-        id: document.id,
-        ...(document.data() as Omit<RankedItem, 'id'>),
-      })),
-    );
-  });
+  return onSnapshot(
+    rankingsQuery,
+    snapshot => {
+      onChange(
+        snapshot.docs.map(document => ({
+          id: document.id,
+          ...(document.data() as Omit<RankedItem, 'id'>),
+        })),
+      );
+    },
+    error => {
+      // Without this, a broken subscription (e.g. a transport error) fails
+      // silently and rankings just look empty - log it so it's debuggable.
+      console.error('subscribeToRankings failed:', error);
+    },
+  );
 }
 
 export async function addRanking(

@@ -22,6 +22,7 @@ export default function MovieDetailScreen() {
   const [selectedScore, setSelectedScore] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -44,6 +45,7 @@ export default function MovieDetailScreen() {
   const handleSave = async () => {
     if (!user || !details || selectedScore == null) return;
     setSaving(true);
+    setSaveError(null);
     try {
       await addRanking(user.uid, {
         movieId: details.id,
@@ -54,6 +56,8 @@ export default function MovieDetailScreen() {
         score: selectedScore,
       });
       setSaved(true);
+    } catch (e: any) {
+      setSaveError(e?.message ?? 'Could not save your rating. Try again.');
     } finally {
       setSaving(false);
     }
@@ -128,6 +132,7 @@ export default function MovieDetailScreen() {
         ))}
       </View>
 
+      {saveError ? <Text style={styles.saveErrorText}>{saveError}</Text> : null}
       <AppButton
         title={saved ? 'Added to your list ✓' : 'Add to My List'}
         onPress={handleSave}
@@ -181,4 +186,5 @@ const styles = StyleSheet.create({
   scoreRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.lg },
   scoreButton: { width: 52, marginRight: spacing.sm, marginBottom: spacing.sm, paddingVertical: spacing.sm },
   saveButton: {},
+  saveErrorText: { color: colors.danger, fontSize: fontSize.sm, marginBottom: spacing.sm },
 });

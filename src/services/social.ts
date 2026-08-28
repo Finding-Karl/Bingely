@@ -58,9 +58,15 @@ export function subscribeToFollowing(
     collection(db, 'users', uid, 'following'),
     orderBy('followedAt', 'desc'),
   );
-  return onSnapshot(followingQuery, snapshot => {
-    onChange(snapshot.docs.map(document => document.data() as FollowingEntry));
-  });
+  return onSnapshot(
+    followingQuery,
+    snapshot => {
+      onChange(snapshot.docs.map(document => document.data() as FollowingEntry));
+    },
+    error => {
+      console.error('subscribeToFollowing failed:', error);
+    },
+  );
 }
 
 export async function getFollowing(uid: string): Promise<FollowingEntry[]> {
