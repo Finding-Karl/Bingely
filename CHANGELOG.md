@@ -12,6 +12,15 @@ version bump yet go here. When you're ready to cut a release, this section
 gets renamed to the new version number and dated, and a fresh empty
 `Unreleased` goes back on top.
 
+### Added
+- Retry transient "client is offline" errors on one-shot Firestore reads
+  (getUserProfile, getRankingsCount, getRanking, getFollowing, searchUsers)
+  instead of failing on the first cold-start race - see the code comment in
+  `src/services/firestoreRetry.ts` for the root cause.
+- Light mode is now the default appearance, with a Dark Mode toggle under
+  Profile > Settings (persisted across restarts). Previously the app was
+  hardcoded to a single dark palette everywhere.
+
 ## [0.1.0] - 2026-08-28
 
 First feature-complete MVP: all five core flows working end to end, plus
