@@ -76,3 +76,4 @@ yarn-error.log
 
 # Environment variables (Firebase / TMDB keys) - copy .env.example to .env locally
 .env
+src/screens/WelcomeScreen.tsx

@@ -1,17 +1,13 @@
 import React from 'react';
-import { NavigationContainer, DefaultTheme, Theme } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { DefaultTheme, NavigationContainer, Theme } from '@react-navigation/native';
 import { enableScreens } from 'react-native-screens';
-import WelcomeScreen from '../screens/WelcomeScreen';
+import { AuthProvider, useAuth } from '../context/AuthContext';
+import AuthNavigator from './AuthNavigator';
+import MainTabs from './MainTabs';
 import { colors } from '../theme';
 
 enableScreens();
-
-export type RootStackParamList = {
-  Welcome: undefined;
-};
-
-const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const navigationTheme: Theme = {
   ...DefaultTheme,
@@ -27,12 +23,35 @@ const navigationTheme: Theme = {
   },
 };
 
+function RootSwitch() {
+  const { user, initializing } = useAuth();
+
+  if (initializing) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator color={colors.primary} size="large" />
+      </View>
+    );
+  }
+
+  return user ? <MainTabs /> : <AuthNavigator />;
+}
+
 export default function RootNavigator() {
   return (
-    <NavigationContainer theme={navigationTheme}>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Welcome" component={WelcomeScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <AuthProvider>
+      <NavigationContainer theme={navigationTheme}>
+        <RootSwitch />
+      </NavigationContainer>
+    </AuthProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  loading: {
+    flex: 1,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
