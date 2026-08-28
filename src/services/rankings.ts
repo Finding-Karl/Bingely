@@ -1,5 +1,6 @@
 import { collection, doc, getDoc, getDocs, onSnapshot, orderBy, query, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
+import { withOfflineRetry } from './firestoreRetry';
 import { RankedItem } from '../types/models';
 
 /**
@@ -56,8 +57,10 @@ export async function addRanking(
 }
 
 export async function getRankingsCount(uid: string): Promise<number> {
-  const snapshot = await getDocs(collection(db, 'users', uid, 'rankings'));
-  return snapshot.docs.length;
+  return withOfflineRetry(async () => {
+    const snapshot = await getDocs(collection(db, 'users', uid, 'rankings'));
+    return snapshot.docs.length;
+  });
 }
 
 /** The current user's existing rating for a title, or null if they haven't rated it. */
@@ -67,8 +70,10 @@ export async function getRanking(
   movieId: number,
 ): Promise<RankedItem | null> {
   const id = `${mediaType}-${movieId}`;
-  const snapshot = await getDoc(doc(db, 'users', uid, 'rankings', id));
-  return snapshot.exists()
-    ? { id: snapshot.id, ...(snapshot.data() as Omit<RankedItem, 'id'>) }
-    : null;
+  return withOfflineRetry(async () => {
+    const snapshot = await getDoc(doc(db, 'users', uid, 'rankings', id));
+    return snapshot.exists()
+      ? { id: snapshot.id, ...(snapshot.data() as Omit<RankedItem, 'id'>) }
+      : null;
+  });
 }

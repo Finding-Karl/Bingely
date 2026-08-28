@@ -1,5 +1,6 @@
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
+import { withOfflineRetry } from './firestoreRetry';
 import { UserProfile } from '../types/models';
 
 export async function createUserProfile(params: {
@@ -18,6 +19,8 @@ export async function createUserProfile(params: {
 }
 
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
-  const snapshot = await getDoc(doc(db, 'users', uid));
-  return snapshot.exists() ? (snapshot.data() as UserProfile) : null;
+  return withOfflineRetry(async () => {
+    const snapshot = await getDoc(doc(db, 'users', uid));
+    return snapshot.exists() ? (snapshot.data() as UserProfile) : null;
+  });
 }
