@@ -4,7 +4,7 @@ import { WebView } from 'react-native-webview';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import AppButton from '../components/AppButton';
 import { useAuth } from '../context/AuthContext';
-import { addRanking } from '../services/rankings';
+import { addRanking, getRanking } from '../services/rankings';
 import { getTitleDetails, posterUrl } from '../services/tmdb';
 import { GENRES } from '../constants/genres';
 import { MovieDetails } from '../types/models';
@@ -20,8 +20,9 @@ export default function MovieDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedScore, setSelectedScore] = useState<number | null>(null);
+  const [existingScore, setExistingScore] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,22 +42,51 @@ export default function MovieDetailScreen() {
     };
   }, [params.id, params.mediaType]);
 
-  const handleSave = async () => {
+  // Pre-fill the score picker and switch the button to "Update Rating" if
+  // this title is already on the user's list.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    getRanking(user.uid, params.mediaType, params.id)
+      .then(existing => {
+        if (cancelled || !existing) return;
+        setExistingScore(existing.score);
+        setSelectedScore(current => current ?? existing.score);
+      })
+      .catch(rankingError => {
+        console.error('getRanking failed:', rankingError);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, params.id, params.mediaType]);
+
+  const handleSave = () => {
     if (!user || !details || selectedScore == null) return;
     setSaving(true);
-    try {
-      await addRanking(user.uid, {
-        movieId: details.id,
-        mediaType: details.mediaType,
-        title: details.title,
-        posterPath: details.posterPath,
-        genreIds: details.genreIds,
-        score: selectedScore,
-      });
-      setSaved(true);
-    } finally {
-      setSaving(false);
-    }
+    setSaveError(null);
+
+    const scoreToSave = selectedScore;
+    // Firestore resolves this promise only once the SERVER acknowledges the
+    // write - but it applies the write to the local cache (and fires the
+    // Dashboard's live listener) immediately, which is why the title shows
+    // up on your list right away. Awaiting the full round trip here would
+    // leave the button spinning on any flaky connection even though the
+    // save already "happened" locally. A genuine failure (bad permissions,
+    // invalid data) still surfaces below, just asynchronously.
+    addRanking(user.uid, {
+      movieId: details.id,
+      mediaType: details.mediaType,
+      title: details.title,
+      posterPath: details.posterPath,
+      genreIds: details.genreIds,
+      score: scoreToSave,
+    }).catch((e: any) => {
+      setSaveError(e?.message ?? 'Could not save your rating. Try again.');
+    });
+
+    setExistingScore(scoreToSave);
+    setSaving(false);
   };
 
   if (loading) {
@@ -128,8 +158,9 @@ export default function MovieDetailScreen() {
         ))}
       </View>
 
+      {saveError ? <Text style={styles.saveErrorText}>{saveError}</Text> : null}
       <AppButton
-        title={saved ? 'Added to your list ✓' : 'Add to My List'}
+        title={existingScore != null ? 'Update Rating' : 'Add to My List'}
         onPress={handleSave}
         loading={saving}
         disabled={selectedScore == null || saving}
@@ -181,4 +212,5 @@ const styles = StyleSheet.create({
   scoreRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.lg },
   scoreButton: { width: 52, marginRight: spacing.sm, marginBottom: spacing.sm, paddingVertical: spacing.sm },
   saveButton: {},
+  saveErrorText: { color: colors.danger, fontSize: fontSize.sm, marginBottom: spacing.sm },
 });

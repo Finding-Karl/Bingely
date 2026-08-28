@@ -1,5 +1,7 @@
 module.exports = {
   getAuth: () => ({ currentUser: null }),
+  initializeAuth: () => ({ currentUser: null }),
+  getReactNativePersistence: () => undefined,
   onAuthStateChanged: (_auth, cb) => {
     cb(null);
     return () => {};

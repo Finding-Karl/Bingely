@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, onSnapshot, orderBy, query, setDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, onSnapshot, orderBy, query, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { RankedItem } from '../types/models';
 
@@ -13,14 +13,22 @@ export function subscribeToRankings(
   onChange: (items: RankedItem[]) => void,
 ): () => void {
   const rankingsQuery = query(collection(db, 'users', uid, 'rankings'), orderBy('score', 'desc'));
-  return onSnapshot(rankingsQuery, snapshot => {
-    onChange(
-      snapshot.docs.map(document => ({
-        id: document.id,
-        ...(document.data() as Omit<RankedItem, 'id'>),
-      })),
-    );
-  });
+  return onSnapshot(
+    rankingsQuery,
+    snapshot => {
+      onChange(
+        snapshot.docs.map(document => ({
+          id: document.id,
+          ...(document.data() as Omit<RankedItem, 'id'>),
+        })),
+      );
+    },
+    error => {
+      // Without this, a broken subscription (e.g. a transport error) fails
+      // silently and rankings just look empty - log it so it's debuggable.
+      console.error('subscribeToRankings failed:', error);
+    },
+  );
 }
 
 export async function addRanking(
@@ -50,4 +58,17 @@ export async function addRanking(
 export async function getRankingsCount(uid: string): Promise<number> {
   const snapshot = await getDocs(collection(db, 'users', uid, 'rankings'));
   return snapshot.docs.length;
+}
+
+/** The current user's existing rating for a title, or null if they haven't rated it. */
+export async function getRanking(
+  uid: string,
+  mediaType: RankedItem['mediaType'],
+  movieId: number,
+): Promise<RankedItem | null> {
+  const id = `${mediaType}-${movieId}`;
+  const snapshot = await getDoc(doc(db, 'users', uid, 'rankings', id));
+  return snapshot.exists()
+    ? { id: snapshot.id, ...(snapshot.data() as Omit<RankedItem, 'id'>) }
+    : null;
 }

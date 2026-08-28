@@ -40,11 +40,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
       signUp: async (email, password, username) => {
         const credential = await createUserWithEmailAndPassword(auth, email, password);
-        await createUserProfile({
+        // Same reasoning as MovieDetailScreen's save flow: don't block on
+        // Firestore's write-acknowledgment round trip, just log if it
+        // genuinely fails. onAuthStateChanged already lets the user into
+        // the app as soon as the account exists.
+        createUserProfile({
           uid: credential.user.uid,
           username,
           displayName: username,
           email,
+        }).catch(error => {
+          console.error('createUserProfile failed:', error);
         });
       },
       signOut: async () => {
