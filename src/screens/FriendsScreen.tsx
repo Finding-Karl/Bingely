@@ -52,13 +52,16 @@ export default function FriendsScreen() {
 
   const followingUids = new Set(following.map(entry => entry.uid));
 
-  const handleToggleFollow = async (target: UserProfile) => {
+  const handleToggleFollow = (target: UserProfile) => {
     if (!user) return;
-    if (followingUids.has(target.uid)) {
-      await unfollowUser(user.uid, target.uid);
-    } else {
-      await followUser(user.uid, target);
-    }
+    // Fire-and-forget, same reasoning as MovieDetailScreen's save flow -
+    // don't block on Firestore's write-acknowledgment round trip.
+    const action = followingUids.has(target.uid)
+      ? unfollowUser(user.uid, target.uid)
+      : followUser(user.uid, target);
+    action.catch(error => {
+      console.error('handleToggleFollow failed:', error);
+    });
   };
 
   const showingSearch = query.trim().length > 0;

@@ -42,25 +42,32 @@ export default function MovieDetailScreen() {
     };
   }, [params.id, params.mediaType]);
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!user || !details || selectedScore == null) return;
     setSaving(true);
     setSaveError(null);
-    try {
-      await addRanking(user.uid, {
-        movieId: details.id,
-        mediaType: details.mediaType,
-        title: details.title,
-        posterPath: details.posterPath,
-        genreIds: details.genreIds,
-        score: selectedScore,
-      });
-      setSaved(true);
-    } catch (e: any) {
+
+    // Firestore resolves this promise only once the SERVER acknowledges the
+    // write - but it applies the write to the local cache (and fires the
+    // Dashboard's live listener) immediately, which is why the title shows
+    // up on your list right away. Awaiting the full round trip here would
+    // leave the button spinning on any flaky connection even though the
+    // save already "happened" locally. A genuine failure (bad permissions,
+    // invalid data) still surfaces below, just asynchronously.
+    addRanking(user.uid, {
+      movieId: details.id,
+      mediaType: details.mediaType,
+      title: details.title,
+      posterPath: details.posterPath,
+      genreIds: details.genreIds,
+      score: selectedScore,
+    }).catch((e: any) => {
+      setSaved(false);
       setSaveError(e?.message ?? 'Could not save your rating. Try again.');
-    } finally {
-      setSaving(false);
-    }
+    });
+
+    setSaved(true);
+    setSaving(false);
   };
 
   if (loading) {
