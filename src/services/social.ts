@@ -11,6 +11,7 @@ import {
   where,
 } from 'firebase/firestore';
 import { db } from './firebase';
+import { withOfflineRetry } from './firestoreRetry';
 import { UserProfile } from '../types/models';
 
 export interface FollowingEntry {
@@ -30,10 +31,12 @@ export async function searchUsers(queryText: string, excludeUid: string): Promis
     where('usernameLower', '<=', term + '\uf8ff'),
     limit(20),
   );
-  const snapshot = await getDocs(usersQuery);
-  return snapshot.docs
-    .map(document => document.data() as UserProfile)
-    .filter(profile => profile.uid !== excludeUid);
+  return withOfflineRetry(async () => {
+    const snapshot = await getDocs(usersQuery);
+    return snapshot.docs
+      .map(document => document.data() as UserProfile)
+      .filter(profile => profile.uid !== excludeUid);
+  });
 }
 
 export async function followUser(uid: string, target: UserProfile): Promise<void> {
@@ -70,8 +73,10 @@ export function subscribeToFollowing(
 }
 
 export async function getFollowing(uid: string): Promise<FollowingEntry[]> {
-  const snapshot = await getDocs(
-    query(collection(db, 'users', uid, 'following'), orderBy('followedAt', 'desc')),
-  );
-  return snapshot.docs.map(document => document.data() as FollowingEntry);
+  return withOfflineRetry(async () => {
+    const snapshot = await getDocs(
+      query(collection(db, 'users', uid, 'following'), orderBy('followedAt', 'desc')),
+    );
+    return snapshot.docs.map(document => document.data() as FollowingEntry);
+  });
 }
