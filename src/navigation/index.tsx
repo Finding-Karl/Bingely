@@ -4,7 +4,7 @@ import { DefaultTheme, NavigationContainer, Theme } from '@react-navigation/nati
 import { enableScreens } from 'react-native-screens';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import AuthNavigator from './AuthNavigator';
-import MainTabs from './MainTabs';
+import MainStack from './MainStack';
 import { colors } from '../theme';
 
 enableScreens();
@@ -34,7 +34,7 @@ function RootSwitch() {
     );
   }
 
-  return user ? <MainTabs /> : <AuthNavigator />;
+  return user ? <MainStack /> : <AuthNavigator />;
 }
 
 export default function RootNavigator() {

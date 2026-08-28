@@ -1,4 +1,4 @@
-import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
+import { collection, doc, onSnapshot, orderBy, query, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { RankedItem } from '../types/models';
 
@@ -21,4 +21,28 @@ export function subscribeToRankings(
       })),
     );
   });
+}
+
+export async function addRanking(
+  uid: string,
+  item: {
+    movieId: number;
+    mediaType: RankedItem['mediaType'];
+    title: string;
+    posterPath: string | null;
+    genreIds: number[];
+    score: number;
+  },
+): Promise<string> {
+  const id = `${item.mediaType}-${item.movieId}`;
+  await setDoc(doc(db, 'users', uid, 'rankings', id), {
+    movieId: item.movieId,
+    mediaType: item.mediaType,
+    title: item.title,
+    posterPath: item.posterPath,
+    genreIds: item.genreIds,
+    score: item.score,
+    rankedAt: Date.now(),
+  });
+  return id;
 }
