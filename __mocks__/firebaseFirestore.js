@@ -8,6 +8,7 @@ module.exports = {
   deleteDoc: async () => {},
   query: () => ({}),
   where: () => ({}),
+  limit: () => ({}),
   orderBy: () => ({}),
   onSnapshot: (_query, onNext) => {
     onNext({ docs: [] });

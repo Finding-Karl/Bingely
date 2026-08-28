@@ -43,6 +43,7 @@ export interface RankedItem {
 export interface UserProfile {
   uid: string;
   username: string;
+  usernameLower: string;
   displayName: string;
   email: string;
   createdAt: number;

@@ -8,7 +8,11 @@ export async function createUserProfile(params: {
   displayName: string;
   email: string;
 }): Promise<UserProfile> {
-  const profile: UserProfile = { ...params, createdAt: Date.now() };
+  const profile: UserProfile = {
+    ...params,
+    usernameLower: params.username.trim().toLowerCase(),
+    createdAt: Date.now(),
+  };
   await setDoc(doc(db, 'users', params.uid), profile);
   return profile;
 }
