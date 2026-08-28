@@ -22,6 +22,7 @@ export default function FriendsScreen() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<UserProfile[]>([]);
   const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [following, setFollowing] = useState<FollowingEntry[]>([]);
 
   useEffect(() => {
@@ -32,6 +33,7 @@ export default function FriendsScreen() {
   useEffect(() => {
     if (!user || !query.trim()) {
       setResults([]);
+      setSearchError(null);
       return;
     }
     let cancelled = false;
@@ -39,7 +41,18 @@ export default function FriendsScreen() {
       setSearching(true);
       try {
         const data = await searchUsers(query, user.uid);
-        if (!cancelled) setResults(data);
+        if (cancelled) return;
+        setResults(data);
+        setSearchError(null);
+      } catch (error) {
+        // A one-shot getDocs() read can spuriously reject with "client is
+        // offline" while Firestore's long-poll connection is still warming
+        // up - without this catch it becomes an unhandled promise rejection
+        // and the search silently never resolves.
+        if (cancelled) return;
+        console.error('searchUsers failed:', error);
+        setResults([]);
+        setSearchError('Could not search right now. Try again in a moment.');
       } finally {
         if (!cancelled) setSearching(false);
       }
@@ -103,7 +116,9 @@ export default function FriendsScreen() {
                 />
               </View>
             )}
-            ListEmptyComponent={<Text style={styles.hint}>No users found.</Text>}
+            ListEmptyComponent={
+              <Text style={styles.hint}>{searchError ?? 'No users found.'}</Text>
+            }
           />
         )
       ) : (

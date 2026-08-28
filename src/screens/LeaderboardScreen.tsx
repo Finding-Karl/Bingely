@@ -19,6 +19,7 @@ export default function LeaderboardScreen() {
   const { user } = useAuth();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -47,13 +48,23 @@ export default function LeaderboardScreen() {
       };
 
       setEntries([selfEntry, ...friendEntries].sort((a, b) => b.count - a.count));
+      setError(null);
+    } catch (loadError) {
+      // One-shot getDoc/getDocs reads can spuriously reject with
+      // "client is offline" while Firestore's long-poll connection is still
+      // warming up (right after a reload, for example) - surface it instead
+      // of leaving an unhandled rejection and a frozen spinner.
+      console.error('LeaderboardScreen load failed:', loadError);
+      setError('Could not load the leaderboard. Pull down to try again.');
     } finally {
       setLoading(false);
     }
   }, [user]);
 
   useEffect(() => {
-    load();
+    load().catch(loadError => {
+      console.error('LeaderboardScreen initial load failed:', loadError);
+    });
   }, [load]);
 
   return (
@@ -85,7 +96,9 @@ export default function LeaderboardScreen() {
         }}
         ListEmptyComponent={
           !loading ? (
-            <Text style={styles.hint}>Follow some friends to see a leaderboard.</Text>
+            <Text style={styles.hint}>
+              {error ?? 'Follow some friends to see a leaderboard.'}
+            </Text>
           ) : undefined
         }
       />
