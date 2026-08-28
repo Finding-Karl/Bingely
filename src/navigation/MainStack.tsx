@@ -3,18 +3,22 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MainTabs from './MainTabs';
 import MovieDetailScreen from '../screens/MovieDetailScreen';
 import FriendProfileScreen from '../screens/FriendProfileScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 import { MediaType } from '../types/models';
-import { colors } from '../theme';
+import { useAppTheme } from '../context/ThemeContext';
 
 export type MainStackParamList = {
   MainTabs: undefined;
   MovieDetail: { id: number; mediaType: MediaType };
   FriendProfile: { uid: string; username: string };
+  Settings: undefined;
 };
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
 
 export default function MainStack() {
+  const { colors } = useAppTheme();
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -29,6 +33,7 @@ export default function MainStack() {
         component={FriendProfileScreen}
         options={({ route }) => ({ title: `@${route.params.username}` })}
       />
+      <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
     </Stack.Navigator>
   );
 }

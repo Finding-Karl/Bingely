@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,12 +13,15 @@ import {
   unfollowUser,
 } from '../services/social';
 import { UserProfile } from '../types/models';
-import { colors, fontSize, spacing } from '../theme';
+import { useAppTheme } from '../context/ThemeContext';
+import { AppColors, fontSize, spacing } from '../theme';
 import type { MainStackParamList } from '../navigation/MainStack';
 
 export default function FriendsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const { user } = useAuth();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<UserProfile[]>([]);
   const [searching, setSearching] = useState(false);
@@ -145,40 +148,42 @@ export default function FriendsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, paddingTop: spacing.lg },
-  heading: {
-    color: colors.text,
-    fontSize: fontSize.xl,
-    fontWeight: '800',
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  searchBox: { paddingHorizontal: spacing.lg, marginBottom: spacing.sm },
-  spinner: { marginTop: spacing.xl },
-  sectionTitle: {
-    color: colors.textMuted,
-    fontSize: fontSize.sm,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  rowInfo: { flex: 1 },
-  username: { color: colors.text, fontSize: fontSize.md, fontWeight: '600' },
-  followButton: { width: 104, paddingVertical: spacing.xs + 2 },
-  hint: {
-    color: colors.textMuted,
-    fontSize: fontSize.sm,
-    textAlign: 'center',
-    marginTop: spacing.xl,
-    paddingHorizontal: spacing.lg,
-  },
-});
+function createStyles(colors: AppColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background, paddingTop: spacing.lg },
+    heading: {
+      color: colors.text,
+      fontSize: fontSize.xl,
+      fontWeight: '800',
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    searchBox: { paddingHorizontal: spacing.lg, marginBottom: spacing.sm },
+    spinner: { marginTop: spacing.xl },
+    sectionTitle: {
+      color: colors.textMuted,
+      fontSize: fontSize.sm,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.sm,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+    },
+    rowInfo: { flex: 1 },
+    username: { color: colors.text, fontSize: fontSize.md, fontWeight: '600' },
+    followButton: { width: 104, paddingVertical: spacing.xs + 2 },
+    hint: {
+      color: colors.textMuted,
+      fontSize: fontSize.sm,
+      textAlign: 'center',
+      marginTop: spacing.xl,
+      paddingHorizontal: spacing.lg,
+    },
+  });
+}

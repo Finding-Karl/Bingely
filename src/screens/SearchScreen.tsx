@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -6,11 +6,14 @@ import AppTextInput from '../components/AppTextInput';
 import MovieCard from '../components/MovieCard';
 import { isTmdbConfigured, searchTitles } from '../services/tmdb';
 import { MovieSummary } from '../types/models';
-import { colors, fontSize, spacing } from '../theme';
+import { useAppTheme } from '../context/ThemeContext';
+import { AppColors, fontSize, spacing } from '../theme';
 import type { MainStackParamList } from '../navigation/MainStack';
 
 export default function SearchScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<MovieSummary[]>([]);
   const [loading, setLoading] = useState(false);
@@ -80,22 +83,24 @@ export default function SearchScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, paddingTop: spacing.lg },
-  heading: {
-    color: colors.text,
-    fontSize: fontSize.xl,
-    fontWeight: '800',
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  searchBox: { paddingHorizontal: spacing.lg },
-  spinner: { marginTop: spacing.xl },
-  hint: {
-    color: colors.textMuted,
-    fontSize: fontSize.sm,
-    textAlign: 'center',
-    marginTop: spacing.xl,
-    paddingHorizontal: spacing.lg,
-  },
-});
+function createStyles(colors: AppColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background, paddingTop: spacing.lg },
+    heading: {
+      color: colors.text,
+      fontSize: fontSize.xl,
+      fontWeight: '800',
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    searchBox: { paddingHorizontal: spacing.lg },
+    spinner: { marginTop: spacing.xl },
+    hint: {
+      color: colors.textMuted,
+      fontSize: fontSize.sm,
+      textAlign: 'center',
+      marginTop: spacing.xl,
+      paddingHorizontal: spacing.lg,
+    },
+  });
+}

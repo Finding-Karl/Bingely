@@ -6,12 +6,15 @@ import { RankedItem } from '../types/models';
 import { ALL_TIME_LIST_ID } from '../constants/genres';
 import GenreTabs from '../components/GenreTabs';
 import RankingRow from '../components/RankingRow';
-import { colors, fontSize, spacing } from '../theme';
+import { useAppTheme } from '../context/ThemeContext';
+import { AppColors, fontSize, spacing } from '../theme';
 import type { MainStackParamList } from '../navigation/MainStack';
 
 /** Read-only version of the Dashboard, for viewing a friend's ranked lists. */
 export default function FriendProfileScreen() {
   const { params } = useRoute<RouteProp<MainStackParamList, 'FriendProfile'>>();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [rankings, setRankings] = useState<RankedItem[]>([]);
   const [selectedList, setSelectedList] = useState<string | number>(ALL_TIME_LIST_ID);
 
@@ -40,8 +43,10 @@ export default function FriendProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, paddingTop: spacing.lg },
-  empty: { alignItems: 'center', marginTop: spacing.xxl, paddingHorizontal: spacing.lg },
-  emptyText: { color: colors.textMuted, fontSize: fontSize.sm, textAlign: 'center' },
-});
+function createStyles(colors: AppColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background, paddingTop: spacing.lg },
+    empty: { alignItems: 'center', marginTop: spacing.xxl, paddingHorizontal: spacing.lg },
+    emptyText: { color: colors.textMuted, fontSize: fontSize.sm, textAlign: 'center' },
+  });
+}

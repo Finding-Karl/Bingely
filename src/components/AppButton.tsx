@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
-import { colors, fontSize, radius, spacing } from '../theme';
+import { useAppTheme } from '../context/ThemeContext';
+import { AppColors, fontSize, radius, spacing } from '../theme';
 
 interface Props {
   title: string;
@@ -19,6 +20,8 @@ export default function AppButton({
   variant = 'primary',
   style,
 }: Props) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const isSecondary = variant === 'secondary';
   return (
     <Pressable
@@ -40,16 +43,18 @@ export default function AppButton({
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    borderRadius: radius.md,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primary: { backgroundColor: colors.primary },
-  secondary: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
-  disabled: { opacity: 0.5 },
-  text: { color: colors.background, fontSize: fontSize.md, fontWeight: '700' },
-  textSecondary: { color: colors.text },
-});
+function createStyles(colors: AppColors) {
+  return StyleSheet.create({
+    base: {
+      borderRadius: radius.md,
+      paddingVertical: spacing.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    primary: { backgroundColor: colors.primary },
+    secondary: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
+    disabled: { opacity: 0.5 },
+    text: { color: colors.background, fontSize: fontSize.md, fontWeight: '700' },
+    textSecondary: { color: colors.text },
+  });
+}

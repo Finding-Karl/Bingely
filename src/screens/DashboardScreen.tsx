@@ -6,10 +6,13 @@ import { RankedItem } from '../types/models';
 import { ALL_TIME_LIST_ID } from '../constants/genres';
 import GenreTabs from '../components/GenreTabs';
 import RankingRow from '../components/RankingRow';
-import { colors, fontSize, spacing } from '../theme';
+import { useAppTheme } from '../context/ThemeContext';
+import { AppColors, fontSize, spacing } from '../theme';
 
 export default function DashboardScreen() {
   const { user } = useAuth();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [rankings, setRankings] = useState<RankedItem[]>([]);
   const [selectedList, setSelectedList] = useState<string | number>(ALL_TIME_LIST_ID);
 
@@ -50,22 +53,24 @@ export default function DashboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, paddingTop: spacing.lg },
-  heading: {
-    color: colors.text,
-    fontSize: fontSize.xl,
-    fontWeight: '800',
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  listContent: { paddingBottom: spacing.xl },
-  empty: { alignItems: 'center', marginTop: spacing.xxl, paddingHorizontal: spacing.lg },
-  emptyTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '700' },
-  emptySubtitle: {
-    color: colors.textMuted,
-    fontSize: fontSize.sm,
-    marginTop: spacing.xs,
-    textAlign: 'center',
-  },
-});
+function createStyles(colors: AppColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background, paddingTop: spacing.lg },
+    heading: {
+      color: colors.text,
+      fontSize: fontSize.xl,
+      fontWeight: '800',
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    listContent: { paddingBottom: spacing.xl },
+    empty: { alignItems: 'center', marginTop: spacing.xxl, paddingHorizontal: spacing.lg },
+    emptyTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '700' },
+    emptySubtitle: {
+      color: colors.textMuted,
+      fontSize: fontSize.sm,
+      marginTop: spacing.xs,
+      textAlign: 'center',
+    },
+  });
+}

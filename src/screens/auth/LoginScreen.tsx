@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AppButton from '../../components/AppButton';
 import AppTextInput from '../../components/AppTextInput';
 import { useAuth } from '../../context/AuthContext';
-import { colors, fontSize, spacing } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { AppColors, fontSize, spacing } from '../../theme';
 import type { AuthStackParamList } from '../../navigation/AuthNavigator';
 
 export default function LoginScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList, 'Login'>>();
   const { signIn } = useAuth();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -60,11 +63,18 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, justifyContent: 'center', padding: spacing.lg },
-  title: { color: colors.text, fontSize: fontSize.xl, fontWeight: '800' },
-  subtitle: { color: colors.textMuted, fontSize: fontSize.md, marginTop: spacing.xs, marginBottom: spacing.xl },
-  errorText: { color: colors.danger, marginBottom: spacing.md },
-  footer: { marginTop: spacing.xl },
-  footerText: { color: colors.textMuted, textAlign: 'center', marginBottom: spacing.sm },
-});
+function createStyles(colors: AppColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background, justifyContent: 'center', padding: spacing.lg },
+    title: { color: colors.text, fontSize: fontSize.xl, fontWeight: '800' },
+    subtitle: {
+      color: colors.textMuted,
+      fontSize: fontSize.md,
+      marginTop: spacing.xs,
+      marginBottom: spacing.xl,
+    },
+    errorText: { color: colors.danger, marginBottom: spacing.md },
+    footer: { marginTop: spacing.xl },
+    footerText: { color: colors.textMuted, textAlign: 'center', marginBottom: spacing.sm },
+  });
+}
