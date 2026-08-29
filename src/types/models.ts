@@ -35,7 +35,7 @@ export interface RankedItem {
   title: string;
   posterPath: string | null;
   genreIds: number[];
-  score: number; // 1-10, user-assigned. MVP ranking signal (pairwise comparison is a future iteration).
+  score: number; // 1.0-10.0 in tenths, user-assigned via a slider. MVP ranking signal (pairwise comparison is a future iteration).
   rankedAt: number; // epoch ms
 }
 
