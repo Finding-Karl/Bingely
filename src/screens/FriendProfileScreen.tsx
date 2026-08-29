@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
-import { RouteProp, useRoute } from '@react-navigation/native';
-import { subscribeToRankings } from '../services/rankings';
+import React, { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { RouteProp, useFocusEffect, useRoute } from '@react-navigation/native';
+import { getRankings } from '../services/rankings';
 import { RankedItem } from '../types/models';
 import { ALL_TIME_LIST_ID } from '../constants/genres';
 import GenreTabs from '../components/GenreTabs';
@@ -16,21 +16,57 @@ export default function FriendProfileScreen() {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [rankings, setRankings] = useState<RankedItem[]>([]);
+  // Firestore's live listener had no meaningful "loading" state (it just
+  // fires once cached/synced data is available) - a one-shot fetch needs a
+  // real one, since there's no cache to show while the request is in flight.
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedList, setSelectedList] = useState<string | number>(ALL_TIME_LIST_ID);
 
-  useEffect(() => subscribeToRankings(params.uid, setRankings), [params.uid]);
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      setLoading(true);
+      getRankings(params.uid)
+        .then(items => {
+          if (cancelled) return;
+          setRankings(items);
+          setError(null);
+        })
+        .catch(fetchError => {
+          console.error('getRankings failed:', fetchError);
+          if (!cancelled) setError('Could not load this list. Try again in a moment.');
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, [params.uid]),
+  );
 
   const visibleRankings = useMemo(() => {
     if (selectedList === ALL_TIME_LIST_ID) return rankings;
     return rankings.filter(item => item.genreIds.includes(selectedList as number));
   }, [rankings, selectedList]);
 
+  if (loading && rankings.length === 0 && !error) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator color={colors.primary} />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <GenreTabs selected={selectedList} onSelect={setSelectedList} />
       {visibleRankings.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>@{params.username} hasn't ranked anything here yet.</Text>
+          <Text style={styles.emptyText}>
+            {error ?? `@${params.username} hasn't ranked anything here yet.`}
+          </Text>
         </View>
       ) : (
         <FlatList
@@ -46,6 +82,12 @@ export default function FriendProfileScreen() {
 function createStyles(colors: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background, paddingTop: spacing.lg },
+    center: {
+      flex: 1,
+      backgroundColor: colors.background,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     empty: { alignItems: 'center', marginTop: spacing.xxl, paddingHorizontal: spacing.lg },
     emptyText: { color: colors.textMuted, fontSize: fontSize.sm, textAlign: 'center' },
   });

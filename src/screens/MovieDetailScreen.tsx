@@ -64,32 +64,34 @@ export default function MovieDetailScreen() {
     };
   }, [user, params.id, params.mediaType]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!user || !details || selectedScore == null) return;
     setSaving(true);
     setSaveError(null);
 
     const scoreToSave = selectedScore;
-    // Firestore resolves this promise only once the SERVER acknowledges the
-    // write - but it applies the write to the local cache (and fires the
-    // Dashboard's live listener) immediately, which is why the title shows
-    // up on your list right away. Awaiting the full round trip here would
-    // leave the button spinning on any flaky connection even though the
-    // save already "happened" locally. A genuine failure (bad permissions,
-    // invalid data) still surfaces below, just asynchronously.
-    addRanking(user.uid, {
-      movieId: details.id,
-      mediaType: details.mediaType,
-      title: details.title,
-      posterPath: details.posterPath,
-      genreIds: details.genreIds,
-      score: scoreToSave,
-    }).catch((e: any) => {
+    try {
+      // Unlike Firestore (which applied writes to a local cache immediately,
+      // independent of the network, so the fire-and-forget version of this
+      // used to feel instant), this is a plain HTTP call to the Cloud
+      // Function with no local cache - awaiting it before updating the UI
+      // avoids a race where navigating back to the Dashboard could trigger
+      // its focus refetch (see DashboardScreen.tsx) before this write has
+      // actually landed, which would show a stale list.
+      await addRanking(user.uid, {
+        movieId: details.id,
+        mediaType: details.mediaType,
+        title: details.title,
+        posterPath: details.posterPath,
+        genreIds: details.genreIds,
+        score: scoreToSave,
+      });
+      setExistingScore(scoreToSave);
+    } catch (e: any) {
       setSaveError(e?.message ?? 'Could not save your rating. Try again.');
-    });
-
-    setExistingScore(scoreToSave);
-    setSaving(false);
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {

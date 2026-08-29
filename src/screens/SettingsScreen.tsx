@@ -3,27 +3,32 @@ import { ActivityIndicator, Alert, Pressable, StyleSheet, Switch, Text, View } f
 import { useAppTheme } from '../context/ThemeContext';
 import { AppColors, fontSize, radius, spacing } from '../theme';
 import { auth } from '../services/firebase';
-import { executeDataConnectMutation, executeDataConnectQuery } from '../services/dataConnect';
+import { postgresApi } from '../services/postgresApi';
 
 export default function SettingsScreen() {
   const { colors, isDarkMode, setDarkMode } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const [testingDataConnect, setTestingDataConnect] = useState(false);
+  const [testingBackend, setTestingBackend] = useState(false);
 
-  async function handleTestDataConnect() {
-    setTestingDataConnect(true);
+  async function handleTestBackend() {
+    setTestingBackend(true);
     try {
       const username = auth.currentUser?.email?.split('@')[0] ?? `poc_user_${Date.now()}`;
-      const upsertResult = await executeDataConnectMutation('UpsertUser', { username });
-      const listResult = await executeDataConnectQuery('ListUserReviews');
+      const upsertResult = await postgresApi.put('/profile/me', {
+        username,
+        usernameLower: username.toLowerCase(),
+        displayName: username,
+        email: auth.currentUser?.email ?? 'poc@example.com',
+      });
+      const profile = await postgresApi.get('/profile/me');
       Alert.alert(
-        'SQL Connect round-trip succeeded',
-        `UpsertUser: ${JSON.stringify(upsertResult)}\n\nListUserReviews: ${JSON.stringify(listResult)}`,
+        'Backend round-trip succeeded',
+        `PUT /profile/me: ${JSON.stringify(upsertResult)}\n\nGET /profile/me: ${JSON.stringify(profile)}`,
       );
     } catch (error) {
-      Alert.alert('SQL Connect request failed', error instanceof Error ? error.message : String(error));
+      Alert.alert('Backend request failed', error instanceof Error ? error.message : String(error));
     } finally {
-      setTestingDataConnect(false);
+      setTestingBackend(false);
     }
   }
 
@@ -46,16 +51,16 @@ export default function SettingsScreen() {
       <Text style={styles.sectionTitle}>Developer</Text>
       <Pressable
         style={styles.row}
-        onPress={handleTestDataConnect}
-        disabled={testingDataConnect}
+        onPress={handleTestBackend}
+        disabled={testingBackend}
         android_ripple={{ color: colors.border }}>
         <View style={styles.rowText}>
-          <Text style={styles.rowLabel}>Test SQL Connect (POC)</Text>
+          <Text style={styles.rowLabel}>Test Postgres backend</Text>
           <Text style={styles.rowHint}>
-            Calls UpsertUser then ListUserReviews against Postgres directly from the app.
+            Calls PUT then GET /profile/me against the deployed Cloud Function and Postgres.
           </Text>
         </View>
-        {testingDataConnect ? <ActivityIndicator color={colors.primary} /> : null}
+        {testingBackend ? <ActivityIndicator color={colors.primary} /> : null}
       </Pressable>
     </View>
   );
