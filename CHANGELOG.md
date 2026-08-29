@@ -20,6 +20,12 @@ gets renamed to the new version number and dated, and a fresh empty
 - Light mode is now the default appearance, with a Dark Mode toggle under
   Profile > Settings (persisted across restarts). Previously the app was
   hardcoded to a single dark palette everywhere.
+- Bottom tab bar icons (Ionicons via @react-native-vector-icons) matching
+  each tab's function: a list icon for Dashboard, a magnifying glass for
+  Search, people for Friends, a trophy for Leaderboard, and a profile
+  circle for Profile. Outline glyph when a tab is inactive, filled when
+  active - the standard iOS tab bar convention. Previously the tab bar had
+  no icons at all, just text labels.
 
 ## [0.1.0] - 2026-08-28
 
