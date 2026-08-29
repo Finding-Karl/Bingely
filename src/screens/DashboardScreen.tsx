@@ -2,11 +2,12 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
-import { getRankings } from '../services/rankings';
+import { deleteRanking, getRankings } from '../services/rankings';
 import { RankedItem } from '../types/models';
 import { ALL_TIME_LIST_ID } from '../constants/genres';
 import GenreTabs from '../components/GenreTabs';
 import RankingRow from '../components/RankingRow';
+import SwipeToDelete from '../components/SwipeToDelete';
 import { useAppTheme } from '../context/ThemeContext';
 import { AppColors, fontSize, spacing } from '../theme';
 
@@ -53,6 +54,18 @@ export default function DashboardScreen() {
     return rankings.filter(item => item.genreIds.includes(selectedList as number));
   }, [rankings, selectedList]);
 
+  const handleDelete = (item: RankedItem) => {
+    if (!user) return;
+    // Optimistic: remove locally right away, roll back if the request
+    // actually fails. Re-adding on failure doesn't try to reconstruct the
+    // exact prior sort position - the next focus refetch settles that.
+    setRankings(current => current.filter(r => r.id !== item.id));
+    deleteRanking(user.uid, item.mediaType, item.movieId).catch(error => {
+      console.error('deleteRanking failed:', error);
+      setRankings(current => [...current, item]);
+    });
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Your Lists</Text>
@@ -60,7 +73,11 @@ export default function DashboardScreen() {
       <FlatList
         data={visibleRankings}
         keyExtractor={item => item.id}
-        renderItem={({ item, index }) => <RankingRow item={item} rank={index + 1} />}
+        renderItem={({ item, index }) => (
+          <SwipeToDelete onDelete={() => handleDelete(item)}>
+            <RankingRow item={item} rank={index + 1} />
+          </SwipeToDelete>
+        )}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.primary} />

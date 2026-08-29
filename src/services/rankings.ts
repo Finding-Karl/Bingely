@@ -71,6 +71,17 @@ export async function getRankingsCount(uid: string): Promise<number> {
   return count;
 }
 
+export async function deleteRanking(
+  _uid: string,
+  mediaType: RankedItem['mediaType'],
+  movieId: number,
+): Promise<void> {
+  // Self-only on the backend (DELETE /rankings/mine/:mediaType/:movieId
+  // scopes to the caller's own uid from the verified token) - uid is kept
+  // as a parameter for parity with the other functions in this file.
+  await postgresApi.delete(`/rankings/mine/${mediaType}/${movieId}`);
+}
+
 /** The current user's existing rating for a title, or null if they haven't rated it. */
 export async function getRanking(
   _uid: string,
