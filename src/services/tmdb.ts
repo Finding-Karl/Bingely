@@ -78,6 +78,15 @@ export interface GenrePage {
 export async function discoverByGenre(genreId: number, page: number = 1): Promise<GenrePage> {
   const ids = GENRE_DISCOVER_IDS[genreId] ?? { movie: String(genreId), tv: String(genreId) };
 
+  // Only titles already out this year: from Jan 1 of the current year
+  // through today, so nothing from prior years and nothing not yet
+  // released slips in. Computed fresh each call rather than once at
+  // module load, so a screen left open across a year boundary or a
+  // midnight rollover still gets the right window.
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
+  const yearStartStr = `${today.getFullYear()}-01-01`;
+
   const requests: Promise<{ mediaType: MediaType; items: any[]; totalPages: number }>[] = [];
   if (ids.movie) {
     requests.push(
@@ -85,6 +94,8 @@ export async function discoverByGenre(genreId: number, page: number = 1): Promis
         with_genres: ids.movie,
         include_adult: 'false',
         sort_by: 'primary_release_date.desc',
+        'primary_release_date.gte': yearStartStr,
+        'primary_release_date.lte': todayStr,
         page: String(page),
       }).then((data: any) => ({
         mediaType: 'movie',
@@ -99,6 +110,8 @@ export async function discoverByGenre(genreId: number, page: number = 1): Promis
         with_genres: ids.tv,
         include_adult: 'false',
         sort_by: 'first_air_date.desc',
+        'first_air_date.gte': yearStartStr,
+        'first_air_date.lte': todayStr,
         page: String(page),
       }).then((data: any) => ({
         mediaType: 'tv',
@@ -109,15 +122,18 @@ export async function discoverByGenre(genreId: number, page: number = 1): Promis
   }
 
   const batches = await Promise.all(requests);
-  const tagged = batches.flatMap(batch =>
-    batch.items.map((r: any) => ({ ...r, __mediaType: batch.mediaType })),
-  );
+  const tagged = batches
+    .flatMap(batch => batch.items.map((r: any) => ({ ...r, __mediaType: batch.mediaType })))
+    // Defensive - the gte/lte params above should already guarantee this,
+    // but a title with no date at all (rare, but TMDB data isn't perfect)
+    // shouldn't slip through as "current year".
+    .filter(r => {
+      const date = r.release_date || r.first_air_date;
+      return Boolean(date) && date >= yearStartStr && date <= todayStr;
+    });
   tagged.sort((a, b) => {
-    const dateA = a.release_date || a.first_air_date || '';
-    const dateB = b.release_date || b.first_air_date || '';
-    if (!dateA && !dateB) return 0;
-    if (!dateA) return 1;
-    if (!dateB) return -1;
+    const dateA = a.release_date || a.first_air_date;
+    const dateB = b.release_date || b.first_air_date;
     return dateB.localeCompare(dateA);
   });
 

@@ -67,6 +67,13 @@ gets renamed to the new version number and dated, and a fresh empty
   `src/components/GenreCard.tsx`, `src/screens/GenreResultsScreen.tsx`.
 
 ### Fixed
+- Genre results now only show titles already released this year - TMDB's
+  `/discover` date-range params (`primary_release_date.gte`/`.lte` for
+  movies, `first_air_date.gte`/`.lte` for TV, computed fresh per request
+  from Jan 1 of the current year through today) filter out both prior
+  years and not-yet-released titles server-side, with a client-side check
+  as a backstop for any title missing a date entirely. Previously
+  discoverByGenre pulled from a title's full history.
 - Several genre categories (Action, Adventure, Horror, Romance, Thriller,
   Sci-Fi & Fantasy) were missing most or all of one media type's titles -
   TMDB uses a different genre taxonomy for movies vs. TV shows, and
