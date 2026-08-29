@@ -214,6 +214,21 @@ app.put(
   }),
 );
 
+// DELETE /rankings/mine/:mediaType/:movieId - remove a title from the
+// caller's own list (swipe-to-delete on the Dashboard).
+app.delete(
+  '/rankings/mine/:mediaType/:movieId',
+  asyncRoute(async (req, res) => {
+    const movieId = Number(req.params.movieId);
+    const pool = await getPool();
+    await pool.query(
+      'DELETE FROM rankings WHERE user_id = $1 AND media_type = $2 AND movie_id = $3',
+      [req.uid, req.params.mediaType, movieId],
+    );
+    res.status(204).send();
+  }),
+);
+
 // GET /social/search?term=... - genuine prefix match on username_lower
 // (Firestore's version faked this with a range query; Postgres just does
 // it directly).

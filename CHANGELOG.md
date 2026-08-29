@@ -26,6 +26,18 @@ gets renamed to the new version number and dated, and a fresh empty
   circle for Profile. Outline glyph when a tab is inactive, filled when
   active - the standard iOS tab bar convention. Previously the tab bar had
   no icons at all, just text labels.
+- Swipe left on a Dashboard row to reveal a delete button and remove that
+  title from your list. Built on React Native's built-in Animated/
+  PanResponder (`src/components/SwipeToDelete.tsx`) rather than
+  react-native-gesture-handler, since that library isn't installed in this
+  app and adding it means another native-module install/rebuild - same
+  class of step as the icon font pod issue earlier. Deleting requires an
+  explicit tap on the revealed button (not a fast full swipe) so it can't
+  happen by accident; the removal is optimistic (the row disappears
+  immediately) with a rollback if the request fails. Backed by a new
+  `DELETE /rankings/mine/:mediaType/:movieId` route on the Cloud Function
+  (`functions/`) - **requires a `firebase deploy --only functions` to pick
+  up the new route**, same as any other `functions/` change.
 
 ### In progress: moving rankings/profiles/follows off Firestore to Postgres
 - `spike/sql-connect-graphql-poc` (merged) proved React Native could talk
