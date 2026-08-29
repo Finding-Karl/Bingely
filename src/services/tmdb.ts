@@ -58,6 +58,26 @@ export async function getTitleDetails(id: number, mediaType: MediaType): Promise
   };
 }
 
+export async function discoverByGenre(genreId: number): Promise<MovieSummary[]> {
+  // TMDB splits discover by media type, unlike /search/multi - fetch both
+  // and merge by popularity so movies and shows interleave naturally.
+  const params = {
+    with_genres: String(genreId),
+    include_adult: 'false',
+    sort_by: 'popularity.desc',
+  };
+  const [movies, tv]: [any, any] = await Promise.all([
+    tmdbFetch('/discover/movie', params),
+    tmdbFetch('/discover/tv', params),
+  ]);
+  const tagged = [
+    ...(movies.results ?? []).map((r: any) => ({ ...r, __mediaType: 'movie' as MediaType })),
+    ...(tv.results ?? []).map((r: any) => ({ ...r, __mediaType: 'tv' as MediaType })),
+  ];
+  tagged.sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0));
+  return tagged.map((r) => toSummary(r, r.__mediaType));
+}
+
 export function posterUrl(path: string | null): string | undefined {
   return path ? `${TMDB_IMAGE_BASE}${path}` : undefined;
 }

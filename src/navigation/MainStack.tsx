@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MainTabs from './MainTabs';
 import MovieDetailScreen from '../screens/MovieDetailScreen';
 import FriendProfileScreen from '../screens/FriendProfileScreen';
+import GenreResultsScreen from '../screens/GenreResultsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { MediaType } from '../types/models';
 import { useAppTheme } from '../context/ThemeContext';
@@ -11,6 +12,7 @@ export type MainStackParamList = {
   MainTabs: undefined;
   MovieDetail: { id: number; mediaType: MediaType };
   FriendProfile: { uid: string; username: string };
+  GenreResults: { genreId: number; genreName: string };
   Settings: undefined;
 };
 
@@ -32,6 +34,11 @@ export default function MainStack() {
         name="FriendProfile"
         component={FriendProfileScreen}
         options={({ route }) => ({ title: `@${route.params.username}` })}
+      />
+      <Stack.Screen
+        name="GenreResults"
+        component={GenreResultsScreen}
+        options={({ route }) => ({ title: route.params.genreName })}
       />
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
     </Stack.Navigator>

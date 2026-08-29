@@ -5,7 +5,10 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AppTextInput from '../components/AppTextInput';
 import MovieCard from '../components/MovieCard';
+import GenreCard from '../components/GenreCard';
 import { isTmdbConfigured, searchTitles } from '../services/tmdb';
+import { GENRES } from '../constants/genres';
+import { GENRE_ICONS, DEFAULT_GENRE_ICON } from '../constants/genreIcons';
 import { MovieSummary } from '../types/models';
 import { useAppTheme } from '../context/ThemeContext';
 import { AppColors, fontSize, spacing } from '../theme';
@@ -63,6 +66,24 @@ export default function SearchScreen() {
         <ActivityIndicator color={colors.primary} style={styles.spinner} />
       ) : error ? (
         <Text style={styles.hint}>{error}</Text>
+      ) : !query.trim() ? (
+        <FlatList
+          data={GENRES}
+          keyExtractor={item => String(item.id)}
+          numColumns={2}
+          columnWrapperStyle={styles.genreRow}
+          contentContainerStyle={styles.genreListContent}
+          ListHeaderComponent={<Text style={styles.sectionTitle}>Browse by Genre</Text>}
+          renderItem={({ item }) => (
+            <GenreCard
+              name={item.name}
+              icon={GENRE_ICONS[item.id] ?? DEFAULT_GENRE_ICON}
+              onPress={() =>
+                navigation.navigate('GenreResults', { genreId: item.id, genreName: item.name })
+              }
+            />
+          )}
+        />
       ) : (
         <FlatList
           data={results}
@@ -75,9 +96,7 @@ export default function SearchScreen() {
               }
             />
           )}
-          ListEmptyComponent={
-            query.trim() ? <Text style={styles.hint}>No results.</Text> : undefined
-          }
+          ListEmptyComponent={<Text style={styles.hint}>No results.</Text>}
         />
       )}
     </SafeAreaView>
@@ -96,6 +115,15 @@ function createStyles(colors: AppColors) {
     },
     searchBox: { paddingHorizontal: spacing.lg },
     spinner: { marginTop: spacing.xl },
+    sectionTitle: {
+      color: colors.textMuted,
+      fontSize: fontSize.sm,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      marginBottom: spacing.sm,
+    },
+    genreListContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg },
+    genreRow: { gap: spacing.md, marginBottom: spacing.md },
     hint: {
       color: colors.textMuted,
       fontSize: fontSize.sm,

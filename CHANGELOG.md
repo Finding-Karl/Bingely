@@ -52,6 +52,19 @@ gets renamed to the new version number and dated, and a fresh empty
   doesn't collect a username). The button is hidden entirely until
   `GOOGLE_WEB_CLIENT_ID` is set in `.env`, so this doesn't affect anyone
   who hasn't done that setup yet.
+- A "Browse by Genre" grid on the Search tab's landing state (shown before
+  you type a query): a 2-column grid of genre cards (Action, Comedy, Drama,
+  etc.), each a bordered surface with a single Ionicons outline glyph and
+  the genre name - deliberately plain, content-and-hierarchy-first design
+  in the spirit of Atlassian's card components (atlassian.design/components)
+  rather than illustrated/color-block genre art. Tapping a card pushes a
+  new `GenreResults` screen listing movies and TV shows in that genre,
+  merged by popularity via two parallel TMDB `/discover/movie` and
+  `/discover/tv` calls (`discoverByGenre` in `src/services/tmdb.ts` - TMDB
+  splits discover by media type, unlike `/search/multi`) and rendered with
+  the same `MovieCard` used elsewhere. New files: `src/constants/genreIcons.ts`
+  (genre id -> Ionicons glyph map), `src/components/GenreCard.tsx`,
+  `src/screens/GenreResultsScreen.tsx`.
 
 ### Fixed
 - `pod install` failing with "cannot yet be integrated as static libraries"
