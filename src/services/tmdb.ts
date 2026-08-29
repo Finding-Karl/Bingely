@@ -64,16 +64,23 @@ export interface GenrePage {
   hasMore: boolean;
 }
 
+/** Minimum vote count for a current-year title to count as "not obscure" -
+ * low enough that a fresh release with only a handful of ratings can still
+ * appear, high enough to drop barely-tracked/placeholder entries. */
+const MIN_VOTE_COUNT = 5;
+
 /**
- * One page of a genre's titles, newest release first. TMDB splits
- * /discover by media type and uses a different genre taxonomy for each
- * (see GENRE_DISCOVER_IDS) - a category with no equivalent id in one
- * taxonomy skips that endpoint rather than querying it with a bogus id.
- * sort_by asks TMDB itself to order each endpoint's results by date, so
- * paging through results (see GenreResultsScreen's onEndReached) stays
- * roughly newest-first across pages; the merge below re-sorts each page's
- * movie+TV results together since the two endpoints' own orderings can't
- * be interleaved by TMDB itself.
+ * One page of a genre's titles, most popular first, limited to this year
+ * and already released, and excluding barely-tracked titles (see
+ * MIN_VOTE_COUNT). TMDB splits /discover by media type and uses a
+ * different genre taxonomy for each (see GENRE_DISCOVER_IDS) - a category
+ * with no equivalent id in one taxonomy skips that endpoint rather than
+ * querying it with a bogus id. sort_by asks TMDB itself to order each
+ * endpoint's results by popularity, so paging through results (see
+ * GenreResultsScreen's onEndReached) stays roughly most-popular-first
+ * across pages; the merge below re-sorts each page's movie+TV results
+ * together since the two endpoints' own orderings can't be interleaved by
+ * TMDB itself.
  */
 export async function discoverByGenre(genreId: number, page: number = 1): Promise<GenrePage> {
   const ids = GENRE_DISCOVER_IDS[genreId] ?? { movie: String(genreId), tv: String(genreId) };
@@ -93,9 +100,10 @@ export async function discoverByGenre(genreId: number, page: number = 1): Promis
       tmdbFetch('/discover/movie', {
         with_genres: ids.movie,
         include_adult: 'false',
-        sort_by: 'primary_release_date.desc',
+        sort_by: 'popularity.desc',
         'primary_release_date.gte': yearStartStr,
         'primary_release_date.lte': todayStr,
+        'vote_count.gte': String(MIN_VOTE_COUNT),
         page: String(page),
       }).then((data: any) => ({
         mediaType: 'movie',
@@ -109,9 +117,10 @@ export async function discoverByGenre(genreId: number, page: number = 1): Promis
       tmdbFetch('/discover/tv', {
         with_genres: ids.tv,
         include_adult: 'false',
-        sort_by: 'first_air_date.desc',
+        sort_by: 'popularity.desc',
         'first_air_date.gte': yearStartStr,
         'first_air_date.lte': todayStr,
+        'vote_count.gte': String(MIN_VOTE_COUNT),
         page: String(page),
       }).then((data: any) => ({
         mediaType: 'tv',
@@ -124,18 +133,15 @@ export async function discoverByGenre(genreId: number, page: number = 1): Promis
   const batches = await Promise.all(requests);
   const tagged = batches
     .flatMap(batch => batch.items.map((r: any) => ({ ...r, __mediaType: batch.mediaType })))
-    // Defensive - the gte/lte params above should already guarantee this,
-    // but a title with no date at all (rare, but TMDB data isn't perfect)
-    // shouldn't slip through as "current year".
+    // Defensive - the gte/lte and vote_count.gte params above should
+    // already guarantee this, but TMDB data isn't perfect (a title with no
+    // date at all shouldn't slip through as "current year", and a stray
+    // low-vote-count result shouldn't slip through as "not obscure").
     .filter(r => {
       const date = r.release_date || r.first_air_date;
-      return Boolean(date) && date >= yearStartStr && date <= todayStr;
+      return Boolean(date) && date >= yearStartStr && date <= todayStr && (r.vote_count ?? 0) >= MIN_VOTE_COUNT;
     });
-  tagged.sort((a, b) => {
-    const dateA = a.release_date || a.first_air_date;
-    const dateB = b.release_date || b.first_air_date;
-    return dateB.localeCompare(dateA);
-  });
+  tagged.sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0));
 
   return {
     results: tagged.map(r => toSummary(r, r.__mediaType)),

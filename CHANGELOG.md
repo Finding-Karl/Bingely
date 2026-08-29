@@ -67,6 +67,12 @@ gets renamed to the new version number and dated, and a fresh empty
   `src/components/GenreCard.tsx`, `src/screens/GenreResultsScreen.tsx`.
 
 ### Fixed
+- Genre results now sort by popularity (most popular first) instead of
+  release date, and drop titles with fewer than 5 votes on TMDB so
+  barely-tracked/placeholder entries don't clutter the list - still scoped
+  to this year's already-released titles (see the current-year filter
+  above). The date-range filter and the popularity sort/threshold combine:
+  same window of titles, reordered and thinned.
 - Genre results now only show titles already released this year - TMDB's
   `/discover` date-range params (`primary_release_date.gte`/`.lte` for
   movies, `first_air_date.gte`/`.lte` for TV, computed fresh per request
