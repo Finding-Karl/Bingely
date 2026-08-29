@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AppButton from '../components/AppButton';
@@ -113,7 +114,7 @@ export default function FriendsScreen() {
   const showingSearch = query.trim().length > 0;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <Text style={styles.heading}>Friends</Text>
       <View style={styles.searchBox}>
         <AppTextInput
@@ -174,7 +175,7 @@ export default function FriendsScreen() {
           }
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

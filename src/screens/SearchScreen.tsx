@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AppTextInput from '../components/AppTextInput';
@@ -45,7 +46,7 @@ export default function SearchScreen() {
   }, [query]);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <Text style={styles.heading}>Search</Text>
       <View style={styles.searchBox}>
         <AppTextInput
@@ -79,7 +80,7 @@ export default function SearchScreen() {
           }
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
