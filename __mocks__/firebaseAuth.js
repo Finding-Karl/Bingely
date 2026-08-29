@@ -13,4 +13,11 @@ module.exports = {
     throw new Error('firebase auth is mocked in tests');
   },
   signOut: async () => {},
+  signInWithCredential: async () => {
+    throw new Error('firebase auth is mocked in tests');
+  },
+  GoogleAuthProvider: {
+    credential: () => ({}),
+  },
+  getAdditionalUserInfo: () => null,
 };

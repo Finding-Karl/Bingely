@@ -10,5 +10,6 @@ module.exports = {
     '^@firebase/auth$': '<rootDir>/__mocks__/firebaseAuth.js',
     '^firebase/firestore$': '<rootDir>/__mocks__/firebaseFirestore.js',
     '^react-native-webview$': '<rootDir>/__mocks__/react-native-webview.js',
+    '^@react-native-google-signin/google-signin$': '<rootDir>/__mocks__/react-native-google-signin.js',
   },
 };
