@@ -67,6 +67,26 @@ gets renamed to the new version number and dated, and a fresh empty
   `src/components/GenreCard.tsx`, `src/screens/GenreResultsScreen.tsx`.
 
 ### Fixed
+- Several genre categories (Action, Adventure, Horror, Romance, Thriller,
+  Sci-Fi & Fantasy) were missing most or all of one media type's titles -
+  TMDB uses a different genre taxonomy for movies vs. TV shows, and
+  `discoverByGenre` was querying both `/discover/movie` and `/discover/tv`
+  with the same id regardless of which taxonomy it actually belonged to
+  (e.g. "Action" is movie-only id 28 - querying `/discover/tv?with_genres=28`
+  silently returns zero TV results, since TV has no such genre; conversely
+  "Sci-Fi & Fantasy" is a TV-only id, so the movie side returned nothing).
+  Fixed with a new `src/constants/genreDiscoverIds.ts` map giving each
+  category its correct id (or ids, via TMDB's `|` OR syntax, for Sci-Fi &
+  Fantasy) per media type, skipping the query entirely for a media type
+  with no clean equivalent (Adventure, Horror, Romance, Thriller have no
+  TMDB TV genre) rather than sending a bogus id.
+- Genre results were capped at a single page (page 1 of `/discover/movie`
+  + `/discover/tv`, ~40 titles max) with no way to see more, which on top
+  of the taxonomy bug above made some categories look nearly empty.
+  `discoverByGenre` now takes a `page` argument and reports whether more
+  pages remain; `GenreResultsScreen` loads the next page automatically as
+  you scroll near the bottom (`onEndReached`), with a footer spinner while
+  it fetches.
 - Typing a search query after landing on the Search tab's genre grid threw
   "changing numColumns on the fly is not supported" - the genre grid
   (`numColumns={2}`) and the search results list (1 column) are two

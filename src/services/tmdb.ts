@@ -1,5 +1,6 @@
 import { TMDB_API_READ_TOKEN } from '@env';
 import { MediaType, MovieDetails, MovieSummary, Video } from '../types/models';
+import { GENRE_DISCOVER_IDS } from '../constants/genreDiscoverIds';
 
 const BASE_URL = 'https://api.themoviedb.org/3';
 export const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w342';
@@ -58,26 +59,59 @@ export async function getTitleDetails(id: number, mediaType: MediaType): Promise
   };
 }
 
-export async function discoverByGenre(genreId: number): Promise<MovieSummary[]> {
-  // TMDB splits discover by media type, unlike /search/multi - fetch both
-  // and merge into one newest-first list. sort_by here just controls which
-  // page of results TMDB hands back (we only fetch page 1); the real
-  // ordering happens below, on the raw release_date/first_air_date strings
-  // (sorted before mapping, since MovieSummary's releaseYear is a
-  // display-only string - undated titles sort last either way).
-  const params = {
-    with_genres: String(genreId),
-    include_adult: 'false',
-    sort_by: 'popularity.desc',
-  };
-  const [movies, tv]: [any, any] = await Promise.all([
-    tmdbFetch('/discover/movie', params),
-    tmdbFetch('/discover/tv', params),
-  ]);
-  const tagged = [
-    ...(movies.results ?? []).map((r: any) => ({ ...r, __mediaType: 'movie' as MediaType })),
-    ...(tv.results ?? []).map((r: any) => ({ ...r, __mediaType: 'tv' as MediaType })),
-  ];
+export interface GenrePage {
+  results: MovieSummary[];
+  hasMore: boolean;
+}
+
+/**
+ * One page of a genre's titles, newest release first. TMDB splits
+ * /discover by media type and uses a different genre taxonomy for each
+ * (see GENRE_DISCOVER_IDS) - a category with no equivalent id in one
+ * taxonomy skips that endpoint rather than querying it with a bogus id.
+ * sort_by asks TMDB itself to order each endpoint's results by date, so
+ * paging through results (see GenreResultsScreen's onEndReached) stays
+ * roughly newest-first across pages; the merge below re-sorts each page's
+ * movie+TV results together since the two endpoints' own orderings can't
+ * be interleaved by TMDB itself.
+ */
+export async function discoverByGenre(genreId: number, page: number = 1): Promise<GenrePage> {
+  const ids = GENRE_DISCOVER_IDS[genreId] ?? { movie: String(genreId), tv: String(genreId) };
+
+  const requests: Promise<{ mediaType: MediaType; items: any[]; totalPages: number }>[] = [];
+  if (ids.movie) {
+    requests.push(
+      tmdbFetch('/discover/movie', {
+        with_genres: ids.movie,
+        include_adult: 'false',
+        sort_by: 'primary_release_date.desc',
+        page: String(page),
+      }).then((data: any) => ({
+        mediaType: 'movie',
+        items: data.results ?? [],
+        totalPages: data.total_pages ?? 1,
+      })),
+    );
+  }
+  if (ids.tv) {
+    requests.push(
+      tmdbFetch('/discover/tv', {
+        with_genres: ids.tv,
+        include_adult: 'false',
+        sort_by: 'first_air_date.desc',
+        page: String(page),
+      }).then((data: any) => ({
+        mediaType: 'tv',
+        items: data.results ?? [],
+        totalPages: data.total_pages ?? 1,
+      })),
+    );
+  }
+
+  const batches = await Promise.all(requests);
+  const tagged = batches.flatMap(batch =>
+    batch.items.map((r: any) => ({ ...r, __mediaType: batch.mediaType })),
+  );
   tagged.sort((a, b) => {
     const dateA = a.release_date || a.first_air_date || '';
     const dateB = b.release_date || b.first_air_date || '';
@@ -86,7 +120,11 @@ export async function discoverByGenre(genreId: number): Promise<MovieSummary[]> 
     if (!dateB) return -1;
     return dateB.localeCompare(dateA);
   });
-  return tagged.map((r) => toSummary(r, r.__mediaType));
+
+  return {
+    results: tagged.map(r => toSummary(r, r.__mediaType)),
+    hasMore: batches.some(batch => page < batch.totalPages),
+  };
 }
 
 export function posterUrl(path: string | null): string | undefined {
