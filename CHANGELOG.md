@@ -67,6 +67,15 @@ gets renamed to the new version number and dated, and a fresh empty
   `src/components/GenreCard.tsx`, `src/screens/GenreResultsScreen.tsx`.
 
 ### Fixed
+- Typing a search query after landing on the Search tab's genre grid threw
+  "changing numColumns on the fly is not supported" - the genre grid
+  (`numColumns={2}`) and the search results list (1 column) are two
+  different `FlatList`s in the same spot in the JSX, so React was reusing
+  one underlying `FlatList` instance across the two column counts instead
+  of treating them as separate components. Fixed by giving each `FlatList`
+  a distinct `key` prop (`"genre-grid"` / `"search-results"`), which forces
+  React to unmount/remount rather than reuse the instance when switching
+  between them.
 - `pod install` failing with "cannot yet be integrated as static libraries"
   after adding Google Sign-In - `AppCheckCore` (a transitive dependency of
   the native Google Sign-In SDK) is a Swift pod whose own dependencies,

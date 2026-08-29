@@ -68,6 +68,7 @@ export default function SearchScreen() {
         <Text style={styles.hint}>{error}</Text>
       ) : !query.trim() ? (
         <FlatList
+          key="genre-grid"
           data={GENRES}
           keyExtractor={item => String(item.id)}
           numColumns={2}
@@ -86,6 +87,7 @@ export default function SearchScreen() {
         />
       ) : (
         <FlatList
+          key="search-results"
           data={results}
           keyExtractor={item => `${item.mediaType}-${item.id}`}
           renderItem={({ item }) => (
