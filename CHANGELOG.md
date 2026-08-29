@@ -27,6 +27,20 @@ gets renamed to the new version number and dated, and a fresh empty
   active - the standard iOS tab bar convention. Previously the tab bar had
   no icons at all, just text labels.
 
+### Spike (not merged into any real feature yet)
+- `spike/sql-connect-graphql-poc`: proof-of-concept for talking to Firebase
+  SQL Connect (Postgres, formerly "Data Connect") directly from React
+  Native. SQL Connect only ships official SDKs for Web/iOS/Android/Flutter,
+  so `src/services/dataConnect.ts` replicates the Web SDK's HTTP contract
+  by hand (reverse-engineered from `@firebase/data-connect`'s published
+  source, since it isn't publicly documented) - see the comment at the top
+  of that file. A temporary "Test SQL Connect (POC)" button under
+  Settings > Developer exercises one round trip (UpsertUser mutation, then
+  ListUserReviews query) against the demo schema `firebase init
+  dataconnect` scaffolded. This is purely to validate the approach before
+  committing to migrating rankings/profiles/follows off Firestore - the
+  demo schema and test button are not meant to ship.
+
 ## [0.1.0] - 2026-08-28
 
 First feature-complete MVP: all five core flows working end to end, plus
