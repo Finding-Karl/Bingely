@@ -3,6 +3,7 @@ import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import AppButton from '../components/AppButton';
+import AppTextInput from '../components/AppTextInput';
 import RatingSlider from '../components/RatingSlider';
 import { useAuth } from '../context/AuthContext';
 import { addRanking, getRanking } from '../services/rankings';
@@ -17,6 +18,7 @@ import type { MainStackParamList } from '../navigation/MainStack';
 // like the old button row had - so a new rating starts here and the user
 // drags from it, rather than the Save button being disabled until a tap.
 const DEFAULT_SCORE = 5.5;
+const MAX_REVIEW_LENGTH = 2000;
 
 export default function MovieDetailScreen() {
   const { params } = useRoute<RouteProp<MainStackParamList, 'MovieDetail'>>();
@@ -28,6 +30,7 @@ export default function MovieDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [selectedScore, setSelectedScore] = useState<number>(DEFAULT_SCORE);
   const [existingScore, setExistingScore] = useState<number | null>(null);
+  const [reviewText, setReviewText] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -59,6 +62,7 @@ export default function MovieDetailScreen() {
         if (cancelled || !existing) return;
         setExistingScore(existing.score);
         setSelectedScore(existing.score);
+        setReviewText(existing.review ?? '');
       })
       .catch(rankingError => {
         console.error('getRanking failed:', rankingError);
@@ -74,6 +78,7 @@ export default function MovieDetailScreen() {
     setSaveError(null);
 
     const scoreToSave = selectedScore;
+    const reviewToSave = reviewText.trim() || null;
     try {
       // Unlike Firestore (which applied writes to a local cache immediately,
       // independent of the network, so the fire-and-forget version of this
@@ -89,6 +94,7 @@ export default function MovieDetailScreen() {
         posterPath: details.posterPath,
         genreIds: details.genreIds,
         score: scoreToSave,
+        review: reviewToSave,
       });
       setExistingScore(scoreToSave);
     } catch (e: any) {
@@ -159,6 +165,17 @@ export default function MovieDetailScreen() {
         <RatingSlider value={selectedScore} onChange={setSelectedScore} />
       </View>
 
+      <AppTextInput
+        label="Review (optional)"
+        placeholder="What did you think?"
+        value={reviewText}
+        onChangeText={setReviewText}
+        multiline
+        numberOfLines={4}
+        maxLength={MAX_REVIEW_LENGTH}
+        style={styles.reviewInput}
+      />
+
       {saveError ? <Text style={styles.saveErrorText}>{saveError}</Text> : null}
       <AppButton
         title={existingScore != null ? 'Update Rating' : 'Add to My List'}
@@ -227,6 +244,7 @@ function createStyles(colors: AppColors) {
       marginBottom: spacing.sm,
     },
     scoreSlider: { marginBottom: spacing.lg },
+    reviewInput: { minHeight: 96, textAlignVertical: 'top' },
     saveButton: {},
     saveErrorText: { color: colors.danger, fontSize: fontSize.sm, marginBottom: spacing.sm },
   });

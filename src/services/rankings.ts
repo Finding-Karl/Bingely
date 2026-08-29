@@ -13,6 +13,7 @@ interface RankingRow {
   // postgres returns numeric/decimal columns as strings, not JS numbers,
   // to avoid silent precision loss, so this arrives here as e.g. "7.3".
   score: number | string;
+  review: string | null;
   ranked_at: string;
 }
 
@@ -25,6 +26,7 @@ function mapRankingRow(row: RankingRow): RankedItem {
     posterPath: row.poster_path,
     genreIds: row.genre_ids ?? [],
     score: Number(row.score),
+    review: row.review ?? null,
     rankedAt: new Date(row.ranked_at).getTime(),
   };
 }
@@ -52,6 +54,7 @@ export async function addRanking(
     posterPath: string | null;
     genreIds: number[];
     score: number;
+    review?: string | null;
   },
 ): Promise<string> {
   // The backend scopes this write to the caller's verified uid (see
@@ -65,6 +68,7 @@ export async function addRanking(
     posterPath: item.posterPath,
     genreIds: item.genreIds,
     score: item.score,
+    review: item.review ?? null,
   });
   return row.id;
 }

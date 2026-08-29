@@ -13,6 +13,25 @@ gets renamed to the new version number and dated, and a fresh empty
 `Unreleased` goes back on top.
 
 ### Added
+- Write an optional text review alongside your rating: a multiline field
+  under the rating slider on MovieDetailScreen ("Review (optional)", up to
+  2000 characters), saved and updated together with the score in the same
+  PUT /rankings call. Reviews show up as an italic snippet (2 lines, then
+  truncated) under the title in ranking rows (`RankingRow.tsx`) - both on
+  your own Dashboard and on a friend's profile, so this is really the
+  "read your friends' reviews" feature as much as the "write your own"
+  one. An empty review is stored as NULL (not an empty string), so
+  RankingRow can tell "no review" apart from a blank one.
+  **Requires a one-time manual DB migration** before deploying:
+  ```sql
+  ALTER TABLE rankings ADD COLUMN review TEXT;
+  ```
+  (run via `gcloud sql connect bingely-fdc --user=bingely_app --database=fdcdb`
+  - remember the SQL has to be typed *inside* that psql session, once your
+  prompt changes to `fdcdb=>`, not at the surrounding shell prompt) - then
+  `firebase deploy --only functions` to pick up the new column in
+  PUT /rankings.
+
 - Ratings now use a slider (1.0-10.0 in tenths, e.g. 7.3) instead of a row
   of ten whole-number buttons, via `@react-native-community/slider`
   (native module - needs a pod install/rebuild, same as any other native

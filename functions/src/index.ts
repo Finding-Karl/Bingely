@@ -188,11 +188,13 @@ app.get(
   }),
 );
 
-// PUT /rankings { movieId, mediaType, title, posterPath, genreIds, score }
+const MAX_REVIEW_LENGTH = 2000;
+
+// PUT /rankings { movieId, mediaType, title, posterPath, genreIds, score, review }
 app.put(
   '/rankings',
   asyncRoute(async (req, res) => {
-    const { movieId, mediaType, title, posterPath, genreIds, score } = req.body ?? {};
+    const { movieId, mediaType, title, posterPath, genreIds, score, review } = req.body ?? {};
     if (movieId === undefined || !mediaType || !title || score === undefined) {
       res.status(400).json({ error: 'movieId, mediaType, title, and score are required.' });
       return;
@@ -207,18 +209,30 @@ app.put(
       res.status(400).json({ error: 'score must be a number between 1.0 and 10.0.' });
       return;
     }
+    // review is optional - empty string/undefined/null all mean "no review",
+    // stored as NULL rather than an empty string so it's unambiguous
+    // whether a user has written one (see RankingRow's "has a review" check).
+    let reviewToSave: string | null = null;
+    if (typeof review === 'string' && review.trim()) {
+      if (review.length > MAX_REVIEW_LENGTH) {
+        res.status(400).json({ error: `review must be ${MAX_REVIEW_LENGTH} characters or fewer.` });
+        return;
+      }
+      reviewToSave = review.trim();
+    }
     const pool = await getPool();
     const { rows } = await pool.query(
-      `INSERT INTO rankings (user_id, movie_id, media_type, title, poster_path, genre_ids, score)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO rankings (user_id, movie_id, media_type, title, poster_path, genre_ids, score, review)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        ON CONFLICT (user_id, movie_id, media_type) DO UPDATE SET
          title = EXCLUDED.title,
          poster_path = EXCLUDED.poster_path,
          genre_ids = EXCLUDED.genre_ids,
          score = EXCLUDED.score,
+         review = EXCLUDED.review,
          ranked_at = now()
        RETURNING *`,
-      [req.uid, movieId, mediaType, title, posterPath ?? null, genreIds ?? null, roundedScore],
+      [req.uid, movieId, mediaType, title, posterPath ?? null, genreIds ?? null, roundedScore, reviewToSave],
     );
     res.json(rows[0]);
   }),
