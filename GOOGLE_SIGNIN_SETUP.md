@@ -59,25 +59,14 @@ in by hand:
    ```
    GOOGLE_IOS_CLIENT_ID=1234567890-def...uvw.apps.googleusercontent.com
    ```
-4. Add a URL scheme to `ios/bingely/Info.plist` (inside the top-level
-   `<dict>`, anywhere alongside the other keys) built from that same
+4. Add a URL scheme to `ios/bingely/Info.plist` built from that same
    client ID, reversed: take everything before `.apps.googleusercontent.com`
-   and prefix it with `com.googleusercontent.apps.`. For the example
-   above (`1234567890-def...uvw`), that's:
-   ```xml
-   <key>CFBundleURLTypes</key>
-   <array>
-     <dict>
-       <key>CFBundleURLSchemes</key>
-       <array>
-         <string>com.googleusercontent.apps.1234567890-def...uvw</string>
-       </array>
-     </dict>
-   </array>
-   ```
-   Use your actual client ID's prefix, not the example above. Without this
-   step, tapping the Google button will open the sign-in flow but it won't
-   be able to return control to the app afterward.
+   and prefix it with `com.googleusercontent.apps.`. **Already done** for
+   this project's current iOS client (`CFBundleURLTypes` in
+   `ios/bingely/Info.plist`) - only needed again if the iOS OAuth client is
+   ever recreated/rotated. Without this step, tapping the Google button
+   opens the sign-in flow but errors with "your app is missing support for
+   the following URL schemes" instead of returning control to the app.
 
 ## 3. Android: OAuth client (SHA-1)
 

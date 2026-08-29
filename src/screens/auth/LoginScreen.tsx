@@ -2,7 +2,6 @@ import React, { useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import AppButton from '../../components/AppButton';
 import AppTextInput from '../../components/AppTextInput';
 import { useAuth } from '../../context/AuthContext';
@@ -14,7 +13,7 @@ import type { AuthStackParamList } from '../../navigation/AuthNavigator';
 export default function LoginScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList, 'Login'>>();
   const { signIn, signInWithGoogle } = useAuth();
-  const { colors, isDarkMode } = useAppTheme();
+  const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -77,11 +76,12 @@ export default function LoginScreen() {
             <Text style={styles.dividerText}>or</Text>
             <View style={styles.dividerLine} />
           </View>
-          <GoogleSigninButton
-            style={styles.googleButton}
-            size={GoogleSigninButton.Size.Wide}
-            color={isDarkMode ? GoogleSigninButton.Color.Light : GoogleSigninButton.Color.Dark}
+          <AppButton
+            title="Continue with Google"
+            icon="logo-google"
+            variant="secondary"
             onPress={handleGoogleSignIn}
+            loading={googleLoading}
             disabled={googleLoading}
           />
         </>
@@ -109,7 +109,6 @@ function createStyles(colors: AppColors) {
     divider: { flexDirection: 'row', alignItems: 'center', marginVertical: spacing.lg },
     dividerLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
     dividerText: { color: colors.textMuted, fontSize: fontSize.sm, marginHorizontal: spacing.sm },
-    googleButton: { width: '100%', height: 48 },
     footer: { marginTop: spacing.xl },
     footerText: { color: colors.textMuted, textAlign: 'center', marginBottom: spacing.sm },
   });
