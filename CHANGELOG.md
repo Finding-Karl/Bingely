@@ -13,6 +13,19 @@ gets renamed to the new version number and dated, and a fresh empty
 `Unreleased` goes back on top.
 
 ### Added
+- The splash/launch screen now matches the app icon theme on both
+  platforms, instead of the stock "bingely / Powered by React Native" on
+  white: same brand red (#E5484D) background, with "Bingely" set in
+  Playfair Display SemiBold Italic on iOS (`LaunchScreen.storyboard`,
+  referencing the font already linked in the app-icon PR - custom fonts
+  in a launch screen work because UIAppFonts registers them at the OS
+  level before the app's own code runs) and the same white "b" monogram
+  from the icon on Android (new `drawable/splash_glyph.png` - a
+  transparent version of the icon's glyph - centered over
+  `drawable/launch_screen.xml`'s red layer-list background, wired in via
+  `styles.xml`'s `android:windowBackground`). Android had no launch-screen
+  theming at all before this (plain default background).
+
 - A real app icon: a lowercase "b" set in Playfair Display Italic, white
   on the app's existing brand red (#E5484D), on both iOS
   (`AppIcon.appiconset`, all required sizes through the 1024 marketing

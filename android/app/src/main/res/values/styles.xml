@@ -4,6 +4,9 @@
     <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
+        <!-- Cold-start background shown before the RN root view renders -
+             see drawable/launch_screen.xml. Matches the app icon theme. -->
+        <item name="android:windowBackground">@drawable/launch_screen</item>
     </style>
 
 </resources>

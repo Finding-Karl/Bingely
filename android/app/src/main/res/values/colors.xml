@@ -1,0 +1,7 @@
+<resources>
+    <!-- Matches the app icon / Dashboard wordmark's brand red (#E5484D,
+         theme.ts's light-mode `primary`) - kept as one fixed value here
+         since the cold-start window background renders before the app's
+         own JS/theme system exists to pick light vs. dark. -->
+    <color name="splash_background">#E5484D</color>
+</resources>
