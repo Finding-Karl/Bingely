@@ -1,7 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { WebView } from 'react-native-webview';
 import { RouteProp, useRoute } from '@react-navigation/native';
+import { useHeaderHeight } from '@react-navigation/elements';
 import AppButton from '../components/AppButton';
 import AppTextInput from '../components/AppTextInput';
 import RatingSlider from '../components/RatingSlider';
@@ -22,6 +31,7 @@ const MAX_REVIEW_LENGTH = 2000;
 
 export default function MovieDetailScreen() {
   const { params } = useRoute<RouteProp<MainStackParamList, 'MovieDetail'>>();
+  const headerHeight = useHeaderHeight();
   const { user } = useAuth();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -126,65 +136,78 @@ export default function MovieDetailScreen() {
   const poster = posterUrl(details.posterPath);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        {poster ? (
-          <Image source={{ uri: poster }} style={styles.poster} />
-        ) : (
-          <View style={[styles.poster, styles.posterFallback]} />
-        )}
-        <View style={styles.headerInfo}>
-          <Text style={styles.title}>{details.title}</Text>
-          {details.releaseYear ? <Text style={styles.year}>{details.releaseYear}</Text> : null}
-          <View style={styles.genreRow}>
-            {genreNames.map(name => (
-              <View key={name} style={styles.genreChip}>
-                <Text style={styles.genreChipText}>{name}</Text>
-              </View>
-            ))}
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      // Accounts for the native stack header above this screen (see
+      // MainStack.tsx's MovieDetail options) so 'padding' shifts content up
+      // by the right amount instead of over/under-correcting.
+      keyboardVerticalOffset={Platform.OS === 'ios' ? headerHeight : 0}
+    >
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.header}>
+          {poster ? (
+            <Image source={{ uri: poster }} style={styles.poster} />
+          ) : (
+            <View style={[styles.poster, styles.posterFallback]} />
+          )}
+          <View style={styles.headerInfo}>
+            <Text style={styles.title}>{details.title}</Text>
+            {details.releaseYear ? <Text style={styles.year}>{details.releaseYear}</Text> : null}
+            <View style={styles.genreRow}>
+              {genreNames.map(name => (
+                <View key={name} style={styles.genreChip}>
+                  <Text style={styles.genreChipText}>{name}</Text>
+                </View>
+              ))}
+            </View>
           </View>
         </View>
-      </View>
 
-      {trailer ? (
-        <View style={styles.trailerWrap}>
-          <WebView
-            source={{ uri: `https://www.youtube.com/embed/${trailer.key}` }}
-            style={styles.trailer}
-            allowsFullscreenVideo
-          />
+        {trailer ? (
+          <View style={styles.trailerWrap}>
+            <WebView
+              source={{ uri: `https://www.youtube.com/embed/${trailer.key}` }}
+              style={styles.trailer}
+              allowsFullscreenVideo
+            />
+          </View>
+        ) : (
+          <Text style={styles.hint}>No trailer or clip available for this title.</Text>
+        )}
+
+        {details.overview ? <Text style={styles.overview}>{details.overview}</Text> : null}
+
+        <Text style={styles.sectionTitle}>Rate it</Text>
+        <View style={styles.scoreSlider}>
+          <RatingSlider value={selectedScore} onChange={setSelectedScore} />
         </View>
-      ) : (
-        <Text style={styles.hint}>No trailer or clip available for this title.</Text>
-      )}
 
-      {details.overview ? <Text style={styles.overview}>{details.overview}</Text> : null}
+        <AppTextInput
+          label="Review (optional)"
+          placeholder="What did you think?"
+          value={reviewText}
+          onChangeText={setReviewText}
+          multiline
+          numberOfLines={4}
+          maxLength={MAX_REVIEW_LENGTH}
+          style={styles.reviewInput}
+        />
 
-      <Text style={styles.sectionTitle}>Rate it</Text>
-      <View style={styles.scoreSlider}>
-        <RatingSlider value={selectedScore} onChange={setSelectedScore} />
-      </View>
-
-      <AppTextInput
-        label="Review (optional)"
-        placeholder="What did you think?"
-        value={reviewText}
-        onChangeText={setReviewText}
-        multiline
-        numberOfLines={4}
-        maxLength={MAX_REVIEW_LENGTH}
-        style={styles.reviewInput}
-      />
-
-      {saveError ? <Text style={styles.saveErrorText}>{saveError}</Text> : null}
-      <AppButton
-        title={existingScore != null ? 'Update Rating' : 'Add to My List'}
-        onPress={handleSave}
-        loading={saving}
-        disabled={saving}
-        style={styles.saveButton}
-      />
-    </ScrollView>
+        {saveError ? <Text style={styles.saveErrorText}>{saveError}</Text> : null}
+        <AppButton
+          title={existingScore != null ? 'Update Rating' : 'Add to My List'}
+          onPress={handleSave}
+          loading={saving}
+          disabled={saving}
+          style={styles.saveButton}
+        />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

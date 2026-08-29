@@ -102,6 +102,20 @@ gets renamed to the new version number and dated, and a fresh empty
   `src/components/GenreCard.tsx`, `src/screens/GenreResultsScreen.tsx`.
 
 ### Fixed
+- The keyboard covered the review text box (and the Save button below it)
+  on MovieDetailScreen instead of the screen scrolling to make room -
+  Android's `windowSoftInputMode="adjustResize"` (already set) handled
+  this there, but iOS had no equivalent. Wrapped the screen in a
+  `KeyboardAvoidingView` (`behavior="padding"` on iOS only - Android
+  already resizes on its own, and adding both would double-adjust),
+  offset by the native stack header's height via `useHeaderHeight()`
+  from `@react-navigation/elements` (added as an explicit dependency -
+  previously only pulled in transitively through
+  `@react-navigation/native-stack`) so the padding accounts for the
+  header instead of over-shifting content. Also added
+  `keyboardShouldPersistTaps="handled"` to the ScrollView so tapping
+  another field or the Save button while the keyboard is up doesn't
+  require a second tap to dismiss it first.
 - Genre results now sort by popularity (most popular first) instead of
   release date, and drop titles with fewer than 5 votes on TMDB so
   barely-tracked/placeholder entries don't clutter the list - still scoped
