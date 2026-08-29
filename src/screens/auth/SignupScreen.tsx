@@ -1,17 +1,18 @@
 import React, { useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text } from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AppButton from '../../components/AppButton';
 import AppTextInput from '../../components/AppTextInput';
 import { useAuth } from '../../context/AuthContext';
 import { useAppTheme } from '../../context/ThemeContext';
+import { isGoogleSignInConfigured } from '../../services/googleAuth';
 import { AppColors, fontSize, spacing } from '../../theme';
 import type { AuthStackParamList } from '../../navigation/AuthNavigator';
 
 export default function SignupScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList, 'Signup'>>();
-  const { signUp } = useAuth();
+  const { signUp, signInWithGoogle } = useAuth();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [username, setUsername] = useState('');
@@ -19,6 +20,7 @@ export default function SignupScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleSubmit = async () => {
     setError(null);
@@ -29,6 +31,18 @@ export default function SignupScreen() {
       setError(e?.message ?? 'Could not create your account.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (e: any) {
+      setError(e?.message ?? 'Could not sign up with Google.');
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -67,6 +81,25 @@ export default function SignupScreen() {
         loading={loading}
         disabled={!email || !password || !username}
       />
+
+      {isGoogleSignInConfigured ? (
+        <>
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+          <AppButton
+            title="Continue with Google"
+            icon="logo-google"
+            variant="secondary"
+            onPress={handleGoogleSignIn}
+            loading={googleLoading}
+            disabled={googleLoading}
+          />
+        </>
+      ) : null}
+
       <AppButton
         title="Back to login"
         variant="secondary"
@@ -88,6 +121,9 @@ function createStyles(colors: AppColors) {
       marginBottom: spacing.xl,
     },
     errorText: { color: colors.danger, marginBottom: spacing.md },
+    divider: { flexDirection: 'row', alignItems: 'center', marginVertical: spacing.lg },
+    dividerLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
+    dividerText: { color: colors.textMuted, fontSize: fontSize.sm, marginHorizontal: spacing.sm },
     backButton: { marginTop: spacing.md },
   });
 }

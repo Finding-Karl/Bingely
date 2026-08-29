@@ -17,6 +17,17 @@ end
 target 'bingely' do
   config = use_native_modules!
 
+  # AppCheckCore (pulled in by @react-native-google-signin/google-signin's
+  # native GoogleSignIn iOS pod) is a Swift pod whose dependencies -
+  # GoogleUtilities and RecaptchaInterop - don't define modules by default.
+  # Without this, `pod install` fails static-linking them with:
+  # "cannot yet be integrated as static libraries ... which do not define
+  # modules." This app doesn't set use_frameworks!, so it's on the default
+  # static-library linkage, hence needing these two opted in explicitly
+  # rather than via a global use_modular_headers!.
+  pod 'GoogleUtilities', :modular_headers => true
+  pod 'RecaptchaInterop', :modular_headers => true
+
   use_react_native!(
     :path => config[:reactNativePath],
     # An absolute path to your application root.

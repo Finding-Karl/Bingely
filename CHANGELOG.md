@@ -38,6 +38,37 @@ gets renamed to the new version number and dated, and a fresh empty
   `DELETE /rankings/mine/:mediaType/:movieId` route on the Cloud Function
   (`functions/`) - **requires a `firebase deploy --only functions` to pick
   up the new route**, same as any other `functions/` change.
+- Sign in / sign up with Google, alongside the existing email/password
+  form, on both the Login and Signup screens. Uses
+  `@react-native-google-signin/google-signin` (a native module - see
+  `GOOGLE_SIGNIN_SETUP.md` for the one-time Google Cloud Console + Info.plist
+  + pod install/rebuild setup this needs) to get a native Google ID token,
+  then exchanges it for a Firebase session via
+  `GoogleAuthProvider.credential()` + `signInWithCredential()` - the same
+  `firebase/auth` instance and `useAuth()` state the email/password flow
+  already uses. The first time a given Google account signs in, a profile
+  row is created via the existing Postgres backend, same as email/password
+  sign-up, with the username defaulted from the email address (Google
+  doesn't collect a username). The button is hidden entirely until
+  `GOOGLE_WEB_CLIENT_ID` is set in `.env`, so this doesn't affect anyone
+  who hasn't done that setup yet.
+
+### Fixed
+- `pod install` failing with "cannot yet be integrated as static libraries"
+  after adding Google Sign-In - `AppCheckCore` (a transitive dependency of
+  the native Google Sign-In SDK) is a Swift pod whose own dependencies,
+  `GoogleUtilities` and `RecaptchaInterop`, don't define modules by default,
+  which static linking (this project's default - no `use_frameworks!`)
+  requires. Fixed by opting those two pods into modular headers explicitly
+  in `ios/Podfile`, rather than the global `use_modular_headers!` (which can
+  cause its own conflicts with other pods).
+- The "Continue with Google" button used the library's native
+  `GoogleSigninButton`, which doesn't match this app's button styling
+  (different font size, and its fixed intrinsic width didn't track the
+  100%-width style override, leaving it visibly off-center). Replaced with
+  the same `AppButton` component every other auth action already uses -
+  `AppButton` gained an optional `icon` prop (Ionicons `logo-google` here)
+  to support this.
 
 ### In progress: moving rankings/profiles/follows off Firestore to Postgres
 - `spike/sql-connect-graphql-poc` (merged) proved React Native could talk
