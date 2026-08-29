@@ -59,12 +59,12 @@ gets renamed to the new version number and dated, and a fresh empty
   in the spirit of Atlassian's card components (atlassian.design/components)
   rather than illustrated/color-block genre art. Tapping a card pushes a
   new `GenreResults` screen listing movies and TV shows in that genre,
-  merged by popularity via two parallel TMDB `/discover/movie` and
-  `/discover/tv` calls (`discoverByGenre` in `src/services/tmdb.ts` - TMDB
-  splits discover by media type, unlike `/search/multi`) and rendered with
-  the same `MovieCard` used elsewhere. New files: `src/constants/genreIcons.ts`
-  (genre id -> Ionicons glyph map), `src/components/GenreCard.tsx`,
-  `src/screens/GenreResultsScreen.tsx`.
+  newest first, via two parallel TMDB `/discover/movie` and `/discover/tv`
+  calls (`discoverByGenre` in `src/services/tmdb.ts` - TMDB splits discover
+  by media type, unlike `/search/multi`) merged and sorted by release date
+  and rendered with the same `MovieCard` used elsewhere. New files:
+  `src/constants/genreIcons.ts` (genre id -> Ionicons glyph map),
+  `src/components/GenreCard.tsx`, `src/screens/GenreResultsScreen.tsx`.
 
 ### Fixed
 - `pod install` failing with "cannot yet be integrated as static libraries"

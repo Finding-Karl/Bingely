@@ -60,7 +60,11 @@ export async function getTitleDetails(id: number, mediaType: MediaType): Promise
 
 export async function discoverByGenre(genreId: number): Promise<MovieSummary[]> {
   // TMDB splits discover by media type, unlike /search/multi - fetch both
-  // and merge by popularity so movies and shows interleave naturally.
+  // and merge into one newest-first list. sort_by here just controls which
+  // page of results TMDB hands back (we only fetch page 1); the real
+  // ordering happens below, on the raw release_date/first_air_date strings
+  // (sorted before mapping, since MovieSummary's releaseYear is a
+  // display-only string - undated titles sort last either way).
   const params = {
     with_genres: String(genreId),
     include_adult: 'false',
@@ -74,7 +78,14 @@ export async function discoverByGenre(genreId: number): Promise<MovieSummary[]> 
     ...(movies.results ?? []).map((r: any) => ({ ...r, __mediaType: 'movie' as MediaType })),
     ...(tv.results ?? []).map((r: any) => ({ ...r, __mediaType: 'tv' as MediaType })),
   ];
-  tagged.sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0));
+  tagged.sort((a, b) => {
+    const dateA = a.release_date || a.first_air_date || '';
+    const dateB = b.release_date || b.first_air_date || '';
+    if (!dateA && !dateB) return 0;
+    if (!dateA) return 1;
+    if (!dateB) return -1;
+    return dateB.localeCompare(dateA);
+  });
   return tagged.map((r) => toSummary(r, r.__mediaType));
 }
 
