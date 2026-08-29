@@ -1,16 +1,20 @@
 import React, { useMemo, useRef } from 'react';
-import { Animated, PanResponder, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Dimensions, PanResponder, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons/static';
 import { useAppTheme } from '../context/ThemeContext';
 import { AppColors, spacing } from '../theme';
 
 const DELETE_WIDTH = 76;
 // How far left a release has to be to snap the row open (rather than back
-// closed) - deliberately short of a full swipe-to-dismiss gesture, so
-// deleting always takes a second, explicit tap on the revealed button
-// instead of a single fast swipe removing something by accident.
+// closed) if it doesn't clear the full-swipe threshold below.
 const SWIPE_OPEN_THRESHOLD = -40;
 const TAP_SLOP = 4;
+// Swiping (and releasing) past this point deletes immediately, same as the
+// revealed button - mirrors iOS Mail/Messages, where a full swipe-through
+// deletes without needing a second tap, while a shorter swipe just reveals
+// the button. Measured against screen width so it scales across devices.
+const FULL_SWIPE_THRESHOLD = -(Dimensions.get('window').width * 0.55);
+const OFF_SCREEN = -Dimensions.get('window').width;
 
 interface Props {
   onDelete: () => void;
@@ -18,9 +22,9 @@ interface Props {
 }
 
 /**
- * Swipe-left-to-reveal-delete for a list row, built on React Native's
- * built-in Animated/PanResponder rather than react-native-gesture-handler -
- * this app doesn't have that native module installed, and adding it means
+ * Swipe-left-to-delete for a list row, built on React Native's built-in
+ * Animated/PanResponder rather than react-native-gesture-handler - this
+ * app doesn't have that native module installed, and adding it means
  * another npm install + pod install + clean rebuild (the same class of
  * step as the icon font pod that was missing earlier), so this stays pure
  * JS with no new native dependency.
@@ -30,6 +34,11 @@ export default function SwipeToDelete({ onDelete, children }: Props) {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const translateX = useRef(new Animated.Value(0)).current;
   const openRef = useRef(false);
+  // Guards against both a double-tap on the delete button and the
+  // PanResponder somehow firing release logic twice for one gesture -
+  // either way, onDelete (which mutates the parent's list) must only ever
+  // fire once per row.
+  const deletedRef = useRef(false);
 
   const close = () => {
     openRef.current = false;
@@ -41,6 +50,16 @@ export default function SwipeToDelete({ onDelete, children }: Props) {
     Animated.spring(translateX, { toValue: -DELETE_WIDTH, useNativeDriver: true }).start();
   };
 
+  const deleteRow = () => {
+    if (deletedRef.current) return;
+    deletedRef.current = true;
+    Animated.timing(translateX, {
+      toValue: OFF_SCREEN,
+      duration: 180,
+      useNativeDriver: true,
+    }).start(() => onDelete());
+  };
+
   const panResponder = useRef(
     PanResponder.create({
       // Once open, a plain tap anywhere on the row should close it again -
@@ -50,8 +69,10 @@ export default function SwipeToDelete({ onDelete, children }: Props) {
         Math.abs(gesture.dx) > 8 && Math.abs(gesture.dx) > Math.abs(gesture.dy),
       onPanResponderMove: (_evt, gesture) => {
         const base = openRef.current ? -DELETE_WIDTH : 0;
-        const next = Math.min(0, Math.max(-DELETE_WIDTH, base + gesture.dx));
-        translateX.setValue(next);
+        // Only the right edge is clamped (can't drag past fully closed) -
+        // the left side is intentionally unbounded so a full swipe can be
+        // dragged past the delete button, same as the native gesture.
+        translateX.setValue(Math.min(0, base + gesture.dx));
       },
       onPanResponderRelease: (_evt, gesture) => {
         const isTap = Math.abs(gesture.dx) < TAP_SLOP && Math.abs(gesture.dy) < TAP_SLOP;
@@ -61,7 +82,9 @@ export default function SwipeToDelete({ onDelete, children }: Props) {
         }
         const base = openRef.current ? -DELETE_WIDTH : 0;
         const finalValue = base + gesture.dx;
-        if (finalValue < SWIPE_OPEN_THRESHOLD) {
+        if (finalValue < FULL_SWIPE_THRESHOLD) {
+          deleteRow();
+        } else if (finalValue < SWIPE_OPEN_THRESHOLD) {
           open();
         } else {
           close();
@@ -74,14 +97,7 @@ export default function SwipeToDelete({ onDelete, children }: Props) {
   return (
     <View style={styles.wrap}>
       <View style={styles.deleteBackground}>
-        <Pressable
-          onPress={() => {
-            close();
-            onDelete();
-          }}
-          style={styles.deleteButton}
-          hitSlop={8}
-        >
+        <Pressable onPress={deleteRow} style={styles.deleteButton} hitSlop={8}>
           <Ionicons name="trash" size={22} color={colors.background} />
         </Pressable>
       </View>
