@@ -25,6 +25,11 @@ export default function RankingRow({ item, rank }: { item: RankedItem; rank: num
           {item.title}
         </Text>
         <Text style={styles.meta}>{item.mediaType === 'movie' ? 'Movie' : 'TV'}</Text>
+        {item.review ? (
+          <Text style={styles.review} numberOfLines={2}>
+            {item.review}
+          </Text>
+        ) : null}
       </View>
       <View style={styles.scoreBadge}>
         <Text style={styles.scoreText}>{item.score.toFixed(1)}</Text>
@@ -50,9 +55,10 @@ function createStyles(colors: AppColors) {
       marginRight: spacing.md,
     },
     posterFallback: { borderWidth: 1, borderColor: colors.border },
-    info: { flex: 1 },
+    info: { flex: 1, marginRight: spacing.sm },
     title: { color: colors.text, fontSize: fontSize.md, fontWeight: '600' },
     meta: { color: colors.textMuted, fontSize: fontSize.xs, marginTop: 2 },
+    review: { color: colors.textMuted, fontSize: fontSize.xs, marginTop: 2, fontStyle: 'italic' },
     scoreBadge: {
       backgroundColor: colors.surfaceAlt,
       borderRadius: radius.pill,

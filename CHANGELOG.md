@@ -13,6 +13,25 @@ gets renamed to the new version number and dated, and a fresh empty
 `Unreleased` goes back on top.
 
 ### Added
+- Write an optional text review alongside your rating: a multiline field
+  under the rating slider on MovieDetailScreen ("Review (optional)", up to
+  2000 characters), saved and updated together with the score in the same
+  PUT /rankings call. Reviews show up as an italic snippet (2 lines, then
+  truncated) under the title in ranking rows (`RankingRow.tsx`) - both on
+  your own Dashboard and on a friend's profile, so this is really the
+  "read your friends' reviews" feature as much as the "write your own"
+  one. An empty review is stored as NULL (not an empty string), so
+  RankingRow can tell "no review" apart from a blank one.
+  **Requires a one-time manual DB migration** before deploying:
+  ```sql
+  ALTER TABLE rankings ADD COLUMN review TEXT;
+  ```
+  (run via `gcloud sql connect bingely-fdc --user=bingely_app --database=fdcdb`
+  - remember the SQL has to be typed *inside* that psql session, once your
+  prompt changes to `fdcdb=>`, not at the surrounding shell prompt) - then
+  `firebase deploy --only functions` to pick up the new column in
+  PUT /rankings.
+
 - Ratings now use a slider (1.0-10.0 in tenths, e.g. 7.3) instead of a row
   of ten whole-number buttons, via `@react-native-community/slider`
   (native module - needs a pod install/rebuild, same as any other native
@@ -83,6 +102,20 @@ gets renamed to the new version number and dated, and a fresh empty
   `src/components/GenreCard.tsx`, `src/screens/GenreResultsScreen.tsx`.
 
 ### Fixed
+- The keyboard covered the review text box (and the Save button below it)
+  on MovieDetailScreen instead of the screen scrolling to make room -
+  Android's `windowSoftInputMode="adjustResize"` (already set) handled
+  this there, but iOS had no equivalent. Wrapped the screen in a
+  `KeyboardAvoidingView` (`behavior="padding"` on iOS only - Android
+  already resizes on its own, and adding both would double-adjust),
+  offset by the native stack header's height via `useHeaderHeight()`
+  from `@react-navigation/elements` (added as an explicit dependency -
+  previously only pulled in transitively through
+  `@react-navigation/native-stack`) so the padding accounts for the
+  header instead of over-shifting content. Also added
+  `keyboardShouldPersistTaps="handled"` to the ScrollView so tapping
+  another field or the Save button while the keyboard is up doesn't
+  require a second tap to dismiss it first.
 - Genre results now sort by popularity (most popular first) instead of
   release date, and drop titles with fewer than 5 votes on TMDB so
   barely-tracked/placeholder entries don't clutter the list - still scoped
