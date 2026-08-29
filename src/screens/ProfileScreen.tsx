@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AppButton from '../components/AppButton';
@@ -15,7 +16,7 @@ export default function ProfileScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View>
         <Text style={styles.heading}>Profile</Text>
         <View style={styles.card}>
@@ -31,7 +32,7 @@ export default function ProfileScreen() {
         />
         <AppButton title="Log out" variant="secondary" onPress={() => signOut()} />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

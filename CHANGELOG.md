@@ -69,6 +69,16 @@ gets renamed to the new version number and dated, and a fresh empty
   the same `AppButton` component every other auth action already uses -
   `AppButton` gained an optional `icon` prop (Ionicons `logo-google` here)
   to support this.
+- The Dashboard/Search/Friends/Leaderboard/Profile tab headers ("Your
+  Lists", "Search", etc.) sat right up against the status bar/notch on
+  some devices - each screen's top-level container used a fixed
+  `paddingTop` (`spacing.lg`, 24px) instead of accounting for the actual
+  safe area. Switched each screen's root `View` to `SafeAreaView` (from
+  `react-native-safe-area-context`, already a dependency but previously
+  unused - only `SafeAreaProvider` was set up at the root) with
+  `edges={['top']}`, which adds the device's real top inset on top of the
+  existing `paddingTop` rather than replacing it, so headers now clear the
+  notch/clock with some breathing room instead of sitting flush against it.
 
 ### In progress: moving rankings/profiles/follows off Firestore to Postgres
 - `spike/sql-connect-graphql-poc` (merged) proved React Native could talk

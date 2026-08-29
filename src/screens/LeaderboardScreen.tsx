@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { getFollowing } from '../services/social';
 import { getRankingsCount } from '../services/rankings';
@@ -70,7 +71,7 @@ export default function LeaderboardScreen() {
   }, [load]);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <Text style={styles.heading}>Leaderboard</Text>
       <Text style={styles.subheading}>Ranked by titles logged</Text>
       <FlatList
@@ -104,7 +105,7 @@ export default function LeaderboardScreen() {
           ) : undefined
         }
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
