@@ -6,12 +6,7 @@ import { auth } from './firebase';
 // client it replaces (src/services/dataConnect.ts, removed) since this is
 // our own documented API rather than a reverse-engineered external one.
 //
-// TODO(karl): once functions/ is deployed, replace this with the real
-// Cloud Run URL `firebase deploy --only functions` prints (looks like
-// https://api-<hash>-<region-code>.a.run.app, or the
-// https://<region>-<project-id>.cloudfunctions.net/api shape for the
-// legacy domain - either works).
-const API_BASE_URL = 'REPLACE_WITH_DEPLOYED_FUNCTION_URL';
+const API_BASE_URL = 'https://us-east1-bingely-85e31.cloudfunctions.net/api';
 
 export class PostgresApiError extends Error {
   constructor(
