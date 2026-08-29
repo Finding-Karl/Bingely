@@ -140,6 +140,14 @@ gets renamed to the new version number and dated, and a fresh empty
   `src/components/GenreCard.tsx`, `src/screens/GenreResultsScreen.tsx`.
 
 ### Fixed
+- The JS splash and the native iOS launch screen showed "Bingely" at two
+  noticeably different sizes - the native launch screen (a baked image) at
+  one size, then the JS splash (a live `<Text>` guessing at a font size) at
+  a visibly smaller one, right after the Metro bundle-download screen.
+  `SplashScreen.tsx` now renders the exact same `wordmark.png` used by the
+  iOS launch screen (copied to `src/assets/images/wordmark.png`) at the same
+  220pt width instead of reproducing it as text, so the two are
+  pixel-for-pixel the same size.
 - The iOS launch screen's "Bingely" text didn't actually match the Dashboard
   header's font, despite both referencing the same
   `PlayfairDisplay-SemiBoldItalic` - iOS's launch-screen renderer doesn't

@@ -37,7 +37,7 @@
                         <constraints>
                             <constraint firstItem="wmk-Iv-001" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="ctr-y1"/>
                             <constraint firstItem="wmk-Iv-001" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="ctr-x1"/>
-                            <constraint firstItem="wmk-Iv-001" firstAttribute="width" secondItem="wmk-Iv-001" secondAttribute="height" multiplier="3.0137" id="wmk-ratio"/>
+                            <constraint firstItem="wmk-Iv-001" firstAttribute="width" secondItem="wmk-Iv-001" secondAttribute="height" multiplier="3.01444" id="wmk-ratio"/>
                             <constraint firstItem="wmk-Iv-001" firstAttribute="width" constant="220" id="wmk-w"/>
                         </constraints>
                     </view>
