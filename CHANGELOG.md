@@ -13,6 +13,22 @@ gets renamed to the new version number and dated, and a fresh empty
 `Unreleased` goes back on top.
 
 ### Added
+- A real app icon: a lowercase "b" set in Playfair Display Italic, white
+  on the app's existing brand red (#E5484D), on both iOS
+  (`AppIcon.appiconset`, all required sizes through the 1024 marketing
+  icon) and Android (legacy `ic_launcher`/`ic_launcher_round` PNGs, all
+  five densities) - there was no icon configured before this (Xcode's
+  asset catalog had empty image slots). The Dashboard header ("Your
+  Lists") is now "Bingely", set in Playfair Display SemiBold Italic - the
+  same family as the icon's monogram, so icon and title read as one
+  identity rather than two unrelated choices. Font files added at
+  `assets/fonts/PlayfairDisplay-{Italic,SemiBoldItalic}.ttf` (sourced from
+  Google Fonts' OFL-licensed release) and linked into both native projects
+  via `npx react-native-asset` (new `react-native.config.js`) - a **native
+  asset, needs a pod install and full rebuild**, same as any other native
+  addition this session; a Metro-only reload won't show either the new
+  icon or the new font.
+
 - Write an optional text review alongside your rating: a multiline field
   under the rating slider on MovieDetailScreen ("Review (optional)", up to
   2000 characters), saved and updated together with the score in the same
