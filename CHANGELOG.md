@@ -27,19 +27,25 @@ gets renamed to the new version number and dated, and a fresh empty
   active - the standard iOS tab bar convention. Previously the tab bar had
   no icons at all, just text labels.
 
-### Spike (not merged into any real feature yet)
-- `spike/sql-connect-graphql-poc`: proof-of-concept for talking to Firebase
-  SQL Connect (Postgres, formerly "Data Connect") directly from React
-  Native. SQL Connect only ships official SDKs for Web/iOS/Android/Flutter,
-  so `src/services/dataConnect.ts` replicates the Web SDK's HTTP contract
-  by hand (reverse-engineered from `@firebase/data-connect`'s published
-  source, since it isn't publicly documented) - see the comment at the top
-  of that file. A temporary "Test SQL Connect (POC)" button under
-  Settings > Developer exercises one round trip (UpsertUser mutation, then
-  ListUserReviews query) against the demo schema `firebase init
-  dataconnect` scaffolded. This is purely to validate the approach before
-  committing to migrating rankings/profiles/follows off Firestore - the
-  demo schema and test button are not meant to ship.
+### In progress: moving rankings/profiles/follows off Firestore to Postgres
+- `spike/sql-connect-graphql-poc` (merged) proved React Native could talk
+  to Firebase SQL Connect directly via a hand-written GraphQL client
+  (`src/services/dataConnect.ts`, since removed), since SQL Connect has no
+  official RN SDK. That approach was then abandoned: SQL Connect's own
+  schema-migration tooling turned out to be broken for this project
+  (`firebase deploy --only dataconnect` / `dataconnect:sql:migrate` both
+  404 on an internal experimental endpoint, reproduced on the latest
+  firebase-tools) - a platform-side gap, not fixable here.
+- `feature/postgres-cloud-function-backend`: pivoted to a Cloud Functions
+  backend (`functions/`, Express + a standard Postgres client) in front of
+  the same already-provisioned Cloud SQL instance, sidestepping SQL
+  Connect's tooling entirely. `src/services/postgresApi.ts` is the new,
+  much simpler RN-side client (a real `Authorization: Bearer` header this
+  time, since it's our own API). See `functions/SETUP.md` for the one-time
+  manual setup (DB user, table DDL, secret, deploy). Not wired into any
+  screen yet - `userProfile.ts`/`rankings.ts`/`social.ts` still read/write
+  Firestore; that's the next step once the backend is deployed and
+  verified.
 
 ## [0.1.0] - 2026-08-28
 
