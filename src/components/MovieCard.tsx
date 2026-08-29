@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MovieSummary } from '../types/models';
 import { posterUrl } from '../services/tmdb';
-import { colors, fontSize, radius, spacing } from '../theme';
+import { useAppTheme } from '../context/ThemeContext';
+import { AppColors, fontSize, radius, spacing } from '../theme';
 
 export default function MovieCard({
   movie,
@@ -11,6 +12,8 @@ export default function MovieCard({
   movie: MovieSummary;
   onPress: () => void;
 }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const uri = posterUrl(movie.posterPath);
   return (
     <Pressable onPress={onPress} style={styles.card}>
@@ -34,34 +37,36 @@ export default function MovieCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  poster: {
-    width: 56,
-    height: 80,
-    borderRadius: radius.sm,
-    backgroundColor: colors.surfaceAlt,
-    marginRight: spacing.md,
-  },
-  posterFallback: { borderWidth: 1, borderColor: colors.border },
-  info: { flex: 1, justifyContent: 'center' },
-  title: { color: colors.text, fontSize: fontSize.md, fontWeight: '700' },
-  metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs },
-  meta: { color: colors.textMuted, fontSize: fontSize.sm, marginRight: spacing.sm },
-  badge: {
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-  },
-  badgeText: { color: colors.textMuted, fontSize: fontSize.xs, fontWeight: '600' },
-});
+function createStyles(colors: AppColors) {
+  return StyleSheet.create({
+    card: {
+      flexDirection: 'row',
+      backgroundColor: colors.surface,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: spacing.md,
+      marginHorizontal: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    poster: {
+      width: 56,
+      height: 80,
+      borderRadius: radius.sm,
+      backgroundColor: colors.surfaceAlt,
+      marginRight: spacing.md,
+    },
+    posterFallback: { borderWidth: 1, borderColor: colors.border },
+    info: { flex: 1, justifyContent: 'center' },
+    title: { color: colors.text, fontSize: fontSize.md, fontWeight: '700' },
+    metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs },
+    meta: { color: colors.textMuted, fontSize: fontSize.sm, marginRight: spacing.sm },
+    badge: {
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: radius.pill,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+    },
+    badgeText: { color: colors.textMuted, fontSize: fontSize.xs, fontWeight: '600' },
+  });
+}

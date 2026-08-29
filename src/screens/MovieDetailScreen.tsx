@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { RouteProp, useRoute } from '@react-navigation/native';
@@ -8,7 +8,8 @@ import { addRanking, getRanking } from '../services/rankings';
 import { getTitleDetails, posterUrl } from '../services/tmdb';
 import { GENRES } from '../constants/genres';
 import { MovieDetails } from '../types/models';
-import { colors, fontSize, radius, spacing } from '../theme';
+import { useAppTheme } from '../context/ThemeContext';
+import { AppColors, fontSize, radius, spacing } from '../theme';
 import type { MainStackParamList } from '../navigation/MainStack';
 
 const SCORES = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
@@ -16,6 +17,8 @@ const SCORES = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
 export default function MovieDetailScreen() {
   const { params } = useRoute<RouteProp<MainStackParamList, 'MovieDetail'>>();
   const { user } = useAuth();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [details, setDetails] = useState<MovieDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -170,47 +173,69 @@ export default function MovieDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg, paddingBottom: spacing.xxl },
-  center: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
-  hint: { color: colors.textMuted, fontSize: fontSize.sm, textAlign: 'center' },
-  header: { flexDirection: 'row', marginBottom: spacing.lg },
-  poster: {
-    width: 100,
-    height: 148,
-    borderRadius: radius.md,
-    backgroundColor: colors.surfaceAlt,
-    marginRight: spacing.md,
-  },
-  posterFallback: { borderWidth: 1, borderColor: colors.border },
-  headerInfo: { flex: 1, justifyContent: 'center' },
-  title: { color: colors.text, fontSize: fontSize.lg, fontWeight: '800' },
-  year: { color: colors.textMuted, fontSize: fontSize.sm, marginTop: spacing.xs },
-  genreRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: spacing.sm },
-  genreChip: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    marginRight: spacing.xs,
-    marginBottom: spacing.xs,
-  },
-  genreChipText: { color: colors.textMuted, fontSize: fontSize.xs },
-  trailerWrap: {
-    height: 200,
-    borderRadius: radius.md,
-    overflow: 'hidden',
-    backgroundColor: colors.surface,
-    marginBottom: spacing.lg,
-  },
-  trailer: { flex: 1 },
-  overview: { color: colors.text, fontSize: fontSize.sm, lineHeight: 20, marginBottom: spacing.lg },
-  sectionTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '700', marginBottom: spacing.sm },
-  scoreRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.lg },
-  scoreButton: { width: 52, marginRight: spacing.sm, marginBottom: spacing.sm, paddingVertical: spacing.sm },
-  saveButton: {},
-  saveErrorText: { color: colors.danger, fontSize: fontSize.sm, marginBottom: spacing.sm },
-});
+function createStyles(colors: AppColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    content: { padding: spacing.lg, paddingBottom: spacing.xxl },
+    center: {
+      flex: 1,
+      backgroundColor: colors.background,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    hint: { color: colors.textMuted, fontSize: fontSize.sm, textAlign: 'center' },
+    header: { flexDirection: 'row', marginBottom: spacing.lg },
+    poster: {
+      width: 100,
+      height: 148,
+      borderRadius: radius.md,
+      backgroundColor: colors.surfaceAlt,
+      marginRight: spacing.md,
+    },
+    posterFallback: { borderWidth: 1, borderColor: colors.border },
+    headerInfo: { flex: 1, justifyContent: 'center' },
+    title: { color: colors.text, fontSize: fontSize.lg, fontWeight: '800' },
+    year: { color: colors.textMuted, fontSize: fontSize.sm, marginTop: spacing.xs },
+    genreRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: spacing.sm },
+    genreChip: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.pill,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      marginRight: spacing.xs,
+      marginBottom: spacing.xs,
+    },
+    genreChipText: { color: colors.textMuted, fontSize: fontSize.xs },
+    trailerWrap: {
+      height: 200,
+      borderRadius: radius.md,
+      overflow: 'hidden',
+      backgroundColor: colors.surface,
+      marginBottom: spacing.lg,
+    },
+    trailer: { flex: 1 },
+    overview: {
+      color: colors.text,
+      fontSize: fontSize.sm,
+      lineHeight: 20,
+      marginBottom: spacing.lg,
+    },
+    sectionTitle: {
+      color: colors.text,
+      fontSize: fontSize.md,
+      fontWeight: '700',
+      marginBottom: spacing.sm,
+    },
+    scoreRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.lg },
+    scoreButton: {
+      width: 52,
+      marginRight: spacing.sm,
+      marginBottom: spacing.sm,
+      paddingVertical: spacing.sm,
+    },
+    saveButton: {},
+    saveErrorText: { color: colors.danger, fontSize: fontSize.sm, marginBottom: spacing.sm },
+  });
+}

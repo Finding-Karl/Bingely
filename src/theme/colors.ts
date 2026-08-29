@@ -1,8 +1,10 @@
 /**
- * Bingely color palette. Dark-first, similar in spirit to Beli's ranking app:
- * high-contrast score badges (gold/silver/bronze) against a dark surface.
+ * Bingely color palettes. Light is the default; dark is an opt-in toggle
+ * under Settings (see src/context/ThemeContext.tsx) rather than following
+ * the system appearance. Both palettes share the same keys/roles so any
+ * screen can switch between them without touching its styles.
  */
-export const colors = {
+export const darkColors = {
   background: '#0B0D12',
   surface: '#151822',
   surfaceAlt: '#1E2230',
@@ -23,4 +25,25 @@ export const colors = {
   bronze: '#CD7F32',
 };
 
-export type AppColors = typeof colors;
+export type AppColors = typeof darkColors;
+
+export const lightColors: AppColors = {
+  background: '#F7F8FA',
+  surface: '#FFFFFF',
+  surfaceAlt: '#EEF0F4',
+  border: '#DDE1E8',
+
+  text: '#14161C',
+  textMuted: '#6B7280',
+
+  primary: '#E5484D',
+  primaryMuted: '#F7D9DA',
+
+  success: '#1E9E5A',
+  warning: '#B5730A',
+  danger: '#D93036',
+
+  gold: '#A67C00',
+  silver: '#6B7280',
+  bronze: '#8B4513',
+};

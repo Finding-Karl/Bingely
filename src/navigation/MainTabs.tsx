@@ -5,7 +5,7 @@ import SearchScreen from '../screens/SearchScreen';
 import FriendsScreen from '../screens/FriendsScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import { colors } from '../theme';
+import { useAppTheme } from '../context/ThemeContext';
 
 export type MainTabParamList = {
   Dashboard: undefined;
@@ -18,6 +18,8 @@ export type MainTabParamList = {
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export default function MainTabs() {
+  const { colors } = useAppTheme();
+
   return (
     <Tab.Navigator
       screenOptions={{
