@@ -13,6 +13,15 @@ gets renamed to the new version number and dated, and a fresh empty
 `Unreleased` goes back on top.
 
 ### Added
+- The JS splash (shown while Firebase Auth is initializing) now stays up for
+  at least one second even when auth resolves instantly, instead of flashing
+  by too fast to register as an intentional launch moment. New
+  `src/components/SplashScreen.tsx` (matches the native launch screens' red
+  background + "Bingely" wordmark) replaces the old plain `ActivityIndicator`
+  spinner in `src/navigation/index.tsx`'s `RootSwitch`; a `minDurationElapsed`
+  state gated by a `MIN_SPLASH_DURATION_MS = 1000` timer keeps it visible
+  alongside the existing `initializing` check.
+
 - The splash/launch screen now matches the app icon theme on both
   platforms, instead of the stock "bingely / Powered by React Native" on
   white: same brand red (#E5484D) background, with "Bingely" set in
@@ -131,6 +140,22 @@ gets renamed to the new version number and dated, and a fresh empty
   `src/components/GenreCard.tsx`, `src/screens/GenreResultsScreen.tsx`.
 
 ### Fixed
+- The iOS launch screen's "Bingely" text didn't actually match the Dashboard
+  header's font, despite both referencing the same
+  `PlayfairDisplay-SemiBoldItalic` - iOS's launch-screen renderer doesn't
+  reliably load `Info.plist`-registered custom fonts on a live `UILabel`
+  before first paint, so it silently fell back to the system font. Fixed the
+  same way the Android splash glyph already was: baked "Bingely" as a
+  pre-rendered image (new `Images.xcassets/wordmark.imageset/wordmark.png`,
+  same font/color as the header) and swapped `LaunchScreen.storyboard`'s
+  `UILabel` for a `UIImageView` referencing it, so there's no runtime font
+  lookup left to fail.
+- The app's display name was lowercase "bingely" under the home screen icon
+  on both platforms (`Info.plist`'s `CFBundleDisplayName`, Android's
+  `strings.xml` `app_name`, and `app.json`'s `displayName`) - now "Bingely",
+  matching the wordmark's capitalization. The icon's own "b" monogram is
+  unchanged.
+
 - The keyboard covered the review text box (and the Save button below it)
   on MovieDetailScreen instead of the screen scrolling to make room -
   Android's `windowSoftInputMode="adjustResize"` (already set) handled

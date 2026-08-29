@@ -1,24 +1,30 @@
-import React from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
 import { DefaultTheme, NavigationContainer, Theme } from '@react-navigation/native';
 import { enableScreens } from 'react-native-screens';
+import SplashScreen from '../components/SplashScreen';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 import AuthNavigator from './AuthNavigator';
 import MainStack from './MainStack';
 
+/** Minimum time the JS splash stays up, so a fast auth check (already
+ * cached/local) doesn't flash the branded splash for a few milliseconds
+ * and read as a glitch instead of an intentional launch moment. */
+const MIN_SPLASH_DURATION_MS = 1000;
+
 enableScreens();
 
 function RootSwitch() {
   const { user, initializing } = useAuth();
-  const { colors } = useAppTheme();
+  const [minDurationElapsed, setMinDurationElapsed] = useState(false);
 
-  if (initializing) {
-    return (
-      <View style={[styles.loading, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.primary} size="large" />
-      </View>
-    );
+  useEffect(() => {
+    const timer = setTimeout(() => setMinDurationElapsed(true), MIN_SPLASH_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (initializing || !minDurationElapsed) {
+    return <SplashScreen />;
   }
 
   return user ? <MainStack /> : <AuthNavigator />;
@@ -55,10 +61,3 @@ export default function RootNavigator() {
   );
 }
 
-const styles = StyleSheet.create({
-  loading: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
