@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AppButton from '../components/AppButton';
 import AppTextInput from '../components/AppTextInput';
@@ -8,8 +8,8 @@ import { useAuth } from '../context/AuthContext';
 import {
   FollowingEntry,
   followUser,
+  getFollowing,
   searchUsers,
-  subscribeToFollowing,
   unfollowUser,
 } from '../services/social';
 import { UserProfile } from '../types/models';
@@ -28,10 +28,24 @@ export default function FriendsScreen() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [following, setFollowing] = useState<FollowingEntry[]>([]);
 
-  useEffect(() => {
-    if (!user) return;
-    return subscribeToFollowing(user.uid, setFollowing);
-  }, [user]);
+  // Firestore's live subscription used to keep this list in sync with the
+  // server automatically - a plain HTTP API has no equivalent, so fetch
+  // once on focus (covers following/unfollowing from a friend's profile
+  // screen elsewhere in the app) and otherwise rely on the optimistic local
+  // updates in handleToggleFollow below.
+  useFocusEffect(
+    useCallback(() => {
+      if (!user) {
+        setFollowing([]);
+        return;
+      }
+      getFollowing(user.uid)
+        .then(setFollowing)
+        .catch(error => {
+          console.error('getFollowing failed:', error);
+        });
+    }, [user]),
+  );
 
   useEffect(() => {
     if (!user || !query.trim()) {
@@ -48,10 +62,10 @@ export default function FriendsScreen() {
         setResults(data);
         setSearchError(null);
       } catch (error) {
-        // A one-shot getDocs() read can spuriously reject with "client is
-        // offline" while Firestore's long-poll connection is still warming
-        // up - without this catch it becomes an unhandled promise rejection
-        // and the search silently never resolves.
+        // A search request can transiently fail (flaky connection, a cold
+        // Cloud Function instance) - without this catch it becomes an
+        // unhandled promise rejection and the search silently never
+        // resolves.
         if (cancelled) return;
         console.error('searchUsers failed:', error);
         setResults([]);
@@ -70,13 +84,29 @@ export default function FriendsScreen() {
 
   const handleToggleFollow = (target: UserProfile) => {
     if (!user) return;
-    // Fire-and-forget, same reasoning as MovieDetailScreen's save flow -
-    // don't block on Firestore's write-acknowledgment round trip.
-    const action = followingUids.has(target.uid)
+    const wasFollowing = followingUids.has(target.uid);
+    const entry: FollowingEntry = {
+      uid: target.uid,
+      username: target.username,
+      displayName: target.displayName,
+    };
+
+    // Optimistic update: the old Firestore subscription used to refresh
+    // this list automatically after a write; a plain HTTP API has no
+    // equivalent, so flip the button immediately and roll back if the
+    // request actually fails.
+    setFollowing(current =>
+      wasFollowing ? current.filter(e => e.uid !== target.uid) : [entry, ...current],
+    );
+
+    const action = wasFollowing
       ? unfollowUser(user.uid, target.uid)
       : followUser(user.uid, target);
     action.catch(error => {
       console.error('handleToggleFollow failed:', error);
+      setFollowing(current =>
+        wasFollowing ? [entry, ...current] : current.filter(e => e.uid !== target.uid),
+      );
     });
   };
 

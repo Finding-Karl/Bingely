@@ -66,6 +66,17 @@ gets renamed to the new version number and dated, and a fresh empty
   instant; a plain HTTP call has no such cache, so not awaiting it risked a
   race where navigating back to the Dashboard could refetch before the
   write had actually landed and show a stale list.
+- `feature/postgres-social`: `social.ts` now calls the Cloud Function
+  backend instead of Firestore, same exported function signatures as
+  before. `searchUsers` uses a real SQL `LIKE` prefix match (the backend
+  already excludes the caller's own row) instead of Firestore's `>=`/`<=`
+  range-query workaround. `subscribeToFollowing`'s live subscription is
+  gone - `getFollowing` is a one-shot fetch, and FriendsScreen (its one
+  caller) now fetches once on focus plus keeps its own optimistic local
+  state for follow/unfollow (flips the button immediately, rolls back on a
+  failed request) instead of relying on a subscription to reflect its own
+  writes back. LeaderboardScreen needed no changes - it already only calls
+  these functions by their existing Promise-returning signatures.
 
 ## [0.1.0] - 2026-08-28
 
