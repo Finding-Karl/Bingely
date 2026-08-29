@@ -46,6 +46,26 @@ gets renamed to the new version number and dated, and a fresh empty
   screen yet - `userProfile.ts`/`rankings.ts`/`social.ts` still read/write
   Firestore; that's the next step once the backend is deployed and
   verified.
+- `feature/postgres-user-profile-rankings`: `userProfile.ts` and
+  `rankings.ts` now call the Cloud Function backend instead of Firestore,
+  same exported function signatures as before. Postgres rows come back
+  snake_case (`display_name`, `ranked_at`, ...) - each service file maps
+  its rows to the existing camelCase model types (`UserProfile`,
+  `RankedItem`), including converting the `TIMESTAMPTZ` columns' ISO
+  strings back to the epoch-ms numbers those types use.
+  `subscribeToRankings`'s live Firestore subscription is gone (a plain
+  HTTP API has no equivalent) - it's replaced by `getRankings`, a one-shot
+  fetch that Dashboard and FriendProfile now call on screen focus
+  (`useFocusEffect`) instead of subscribing once on mount; Dashboard also
+  gained pull-to-refresh. FriendProfileScreen, which previously had no
+  loading state (Firestore's listener just fires once data is cached),
+  now shows a spinner while its first fetch is in flight. MovieDetailScreen's
+  save flow now awaits the write instead of firing it and moving on -
+  Firestore used to apply writes to a local cache immediately regardless of
+  the network, which is what made the old fire-and-forget version feel
+  instant; a plain HTTP call has no such cache, so not awaiting it risked a
+  race where navigating back to the Dashboard could refetch before the
+  write had actually landed and show a stale list.
 
 ## [0.1.0] - 2026-08-28
 
