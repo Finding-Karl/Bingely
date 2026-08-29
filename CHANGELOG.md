@@ -13,6 +13,22 @@ gets renamed to the new version number and dated, and a fresh empty
 `Unreleased` goes back on top.
 
 ### Added
+- Ratings now use a slider (1.0-10.0 in tenths, e.g. 7.3) instead of a row
+  of ten whole-number buttons, via `@react-native-community/slider`
+  (native module - needs a pod install/rebuild, same as any other native
+  dependency added this session). New `src/components/RatingSlider.tsx`.
+  The slider always has a position (unlike the old buttons, which started
+  unselected), so a new rating now starts pre-filled at 5.5 and the Save
+  button is enabled immediately, rather than being disabled until a tap.
+  **Requires a one-time manual DB migration** before deploying, since the
+  `rankings.score` column was `INTEGER`:
+  ```sql
+  ALTER TABLE rankings ALTER COLUMN score TYPE NUMERIC(3,1);
+  ```
+  (run via `gcloud sql connect bingely-fdc --user=bingely_app --database=fdcdb`,
+  same as the original schema setup) - then `firebase deploy --only functions`
+  to pick up the score validation/rounding change in `functions/src/index.ts`.
+
 - Retry transient "client is offline" errors on one-shot Firestore reads
   (getUserProfile, getRankingsCount, getRanking, getFollowing, searchUsers)
   instead of failing on the first cold-start race - see the code comment in

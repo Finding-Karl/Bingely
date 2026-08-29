@@ -3,6 +3,7 @@ import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import AppButton from '../components/AppButton';
+import RatingSlider from '../components/RatingSlider';
 import { useAuth } from '../context/AuthContext';
 import { addRanking, getRanking } from '../services/rankings';
 import { getTitleDetails, posterUrl } from '../services/tmdb';
@@ -12,7 +13,10 @@ import { useAppTheme } from '../context/ThemeContext';
 import { AppColors, fontSize, radius, spacing } from '../theme';
 import type { MainStackParamList } from '../navigation/MainStack';
 
-const SCORES = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+// The slider always has *a* position - there's no "nothing selected" state
+// like the old button row had - so a new rating starts here and the user
+// drags from it, rather than the Save button being disabled until a tap.
+const DEFAULT_SCORE = 5.5;
 
 export default function MovieDetailScreen() {
   const { params } = useRoute<RouteProp<MainStackParamList, 'MovieDetail'>>();
@@ -22,7 +26,7 @@ export default function MovieDetailScreen() {
   const [details, setDetails] = useState<MovieDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedScore, setSelectedScore] = useState<number | null>(null);
+  const [selectedScore, setSelectedScore] = useState<number>(DEFAULT_SCORE);
   const [existingScore, setExistingScore] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -54,7 +58,7 @@ export default function MovieDetailScreen() {
       .then(existing => {
         if (cancelled || !existing) return;
         setExistingScore(existing.score);
-        setSelectedScore(current => current ?? existing.score);
+        setSelectedScore(existing.score);
       })
       .catch(rankingError => {
         console.error('getRanking failed:', rankingError);
@@ -65,7 +69,7 @@ export default function MovieDetailScreen() {
   }, [user, params.id, params.mediaType]);
 
   const handleSave = async () => {
-    if (!user || !details || selectedScore == null) return;
+    if (!user || !details) return;
     setSaving(true);
     setSaveError(null);
 
@@ -151,16 +155,8 @@ export default function MovieDetailScreen() {
       {details.overview ? <Text style={styles.overview}>{details.overview}</Text> : null}
 
       <Text style={styles.sectionTitle}>Rate it</Text>
-      <View style={styles.scoreRow}>
-        {SCORES.map(score => (
-          <AppButton
-            key={score}
-            title={String(score)}
-            variant={selectedScore === score ? 'primary' : 'secondary'}
-            onPress={() => setSelectedScore(score)}
-            style={styles.scoreButton}
-          />
-        ))}
+      <View style={styles.scoreSlider}>
+        <RatingSlider value={selectedScore} onChange={setSelectedScore} />
       </View>
 
       {saveError ? <Text style={styles.saveErrorText}>{saveError}</Text> : null}
@@ -168,7 +164,7 @@ export default function MovieDetailScreen() {
         title={existingScore != null ? 'Update Rating' : 'Add to My List'}
         onPress={handleSave}
         loading={saving}
-        disabled={selectedScore == null || saving}
+        disabled={saving}
         style={styles.saveButton}
       />
     </ScrollView>
@@ -230,13 +226,7 @@ function createStyles(colors: AppColors) {
       fontWeight: '700',
       marginBottom: spacing.sm,
     },
-    scoreRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.lg },
-    scoreButton: {
-      width: 52,
-      marginRight: spacing.sm,
-      marginBottom: spacing.sm,
-      paddingVertical: spacing.sm,
-    },
+    scoreSlider: { marginBottom: spacing.lg },
     saveButton: {},
     saveErrorText: { color: colors.danger, fontSize: fontSize.sm, marginBottom: spacing.sm },
   });

@@ -9,7 +9,10 @@ interface RankingRow {
   title: string;
   poster_path: string | null;
   genre_ids: number[] | null;
-  score: number;
+  // The DB column is NUMERIC(3,1) (to support tenths, e.g. 7.3) - node-
+  // postgres returns numeric/decimal columns as strings, not JS numbers,
+  // to avoid silent precision loss, so this arrives here as e.g. "7.3".
+  score: number | string;
   ranked_at: string;
 }
 
@@ -21,7 +24,7 @@ function mapRankingRow(row: RankingRow): RankedItem {
     title: row.title,
     posterPath: row.poster_path,
     genreIds: row.genre_ids ?? [],
-    score: row.score,
+    score: Number(row.score),
     rankedAt: new Date(row.ranked_at).getTime(),
   };
 }

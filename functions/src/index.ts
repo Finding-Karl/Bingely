@@ -197,6 +197,16 @@ app.put(
       res.status(400).json({ error: 'movieId, mediaType, title, and score are required.' });
       return;
     }
+    // The client's rating slider already snaps to tenths, but round again
+    // here rather than trust the network payload - defends against both
+    // client float drift (e.g. 7.199999999999999) and a caller that isn't
+    // the app's own slider. score column is NUMERIC(3,1); anything outside
+    // 1.0-10.0 is rejected rather than silently clamped.
+    const roundedScore = Math.round(Number(score) * 10) / 10;
+    if (!Number.isFinite(roundedScore) || roundedScore < 1 || roundedScore > 10) {
+      res.status(400).json({ error: 'score must be a number between 1.0 and 10.0.' });
+      return;
+    }
     const pool = await getPool();
     const { rows } = await pool.query(
       `INSERT INTO rankings (user_id, movie_id, media_type, title, poster_path, genre_ids, score)
@@ -208,7 +218,7 @@ app.put(
          score = EXCLUDED.score,
          ranked_at = now()
        RETURNING *`,
-      [req.uid, movieId, mediaType, title, posterPath ?? null, genreIds ?? null, score],
+      [req.uid, movieId, mediaType, title, posterPath ?? null, genreIds ?? null, roundedScore],
     );
     res.json(rows[0]);
   }),
