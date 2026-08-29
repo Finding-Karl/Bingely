@@ -52,8 +52,63 @@ gets renamed to the new version number and dated, and a fresh empty
   doesn't collect a username). The button is hidden entirely until
   `GOOGLE_WEB_CLIENT_ID` is set in `.env`, so this doesn't affect anyone
   who hasn't done that setup yet.
+- A "Browse by Genre" grid on the Search tab's landing state (shown before
+  you type a query): a 2-column grid of genre cards (Action, Comedy, Drama,
+  etc.), each a bordered surface with a single Ionicons outline glyph and
+  the genre name - deliberately plain, content-and-hierarchy-first design
+  in the spirit of Atlassian's card components (atlassian.design/components)
+  rather than illustrated/color-block genre art. Tapping a card pushes a
+  new `GenreResults` screen listing movies and TV shows in that genre,
+  newest first, via two parallel TMDB `/discover/movie` and `/discover/tv`
+  calls (`discoverByGenre` in `src/services/tmdb.ts` - TMDB splits discover
+  by media type, unlike `/search/multi`) merged and sorted by release date
+  and rendered with the same `MovieCard` used elsewhere. New files:
+  `src/constants/genreIcons.ts` (genre id -> Ionicons glyph map),
+  `src/components/GenreCard.tsx`, `src/screens/GenreResultsScreen.tsx`.
 
 ### Fixed
+- Genre results now sort by popularity (most popular first) instead of
+  release date, and drop titles with fewer than 5 votes on TMDB so
+  barely-tracked/placeholder entries don't clutter the list - still scoped
+  to this year's already-released titles (see the current-year filter
+  above). The date-range filter and the popularity sort/threshold combine:
+  same window of titles, reordered and thinned.
+- Genre results now only show titles already released this year - TMDB's
+  `/discover` date-range params (`primary_release_date.gte`/`.lte` for
+  movies, `first_air_date.gte`/`.lte` for TV, computed fresh per request
+  from Jan 1 of the current year through today) filter out both prior
+  years and not-yet-released titles server-side, with a client-side check
+  as a backstop for any title missing a date entirely. Previously
+  discoverByGenre pulled from a title's full history.
+- Several genre categories (Action, Adventure, Horror, Romance, Thriller,
+  Sci-Fi & Fantasy) were missing most or all of one media type's titles -
+  TMDB uses a different genre taxonomy for movies vs. TV shows, and
+  `discoverByGenre` was querying both `/discover/movie` and `/discover/tv`
+  with the same id regardless of which taxonomy it actually belonged to
+  (e.g. "Action" is movie-only id 28 - querying `/discover/tv?with_genres=28`
+  silently returns zero TV results, since TV has no such genre; conversely
+  "Sci-Fi & Fantasy" is a TV-only id, so the movie side returned nothing).
+  Fixed with a new `src/constants/genreDiscoverIds.ts` map giving each
+  category its correct id (or ids, via TMDB's `|` OR syntax, for Sci-Fi &
+  Fantasy) per media type, skipping the query entirely for a media type
+  with no clean equivalent (Adventure, Horror, Romance, Thriller have no
+  TMDB TV genre) rather than sending a bogus id.
+- Genre results were capped at a single page (page 1 of `/discover/movie`
+  + `/discover/tv`, ~40 titles max) with no way to see more, which on top
+  of the taxonomy bug above made some categories look nearly empty.
+  `discoverByGenre` now takes a `page` argument and reports whether more
+  pages remain; `GenreResultsScreen` loads the next page automatically as
+  you scroll near the bottom (`onEndReached`), with a footer spinner while
+  it fetches.
+- Typing a search query after landing on the Search tab's genre grid threw
+  "changing numColumns on the fly is not supported" - the genre grid
+  (`numColumns={2}`) and the search results list (1 column) are two
+  different `FlatList`s in the same spot in the JSX, so React was reusing
+  one underlying `FlatList` instance across the two column counts instead
+  of treating them as separate components. Fixed by giving each `FlatList`
+  a distinct `key` prop (`"genre-grid"` / `"search-results"`), which forces
+  React to unmount/remount rather than reuse the instance when switching
+  between them.
 - `pod install` failing with "cannot yet be integrated as static libraries"
   after adding Google Sign-In - `AppCheckCore` (a transitive dependency of
   the native Google Sign-In SDK) is a Swift pod whose own dependencies,
