@@ -8,7 +8,7 @@ export const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w342';
 /** True once a real TMDB API read token has been dropped into .env (see .env.example). */
 export const isTmdbConfigured = Boolean(TMDB_API_READ_TOKEN);
 
-async function tmdbFetch(path: string, params: Record<string, string> = {}) {
+async function tmdbFetch(path: string, params: Record<string, string> = {}): Promise<any> {
   if (!isTmdbConfigured) {
     throw new Error(
       'TMDB_API_READ_TOKEN is not set. Add it to .env (see .env.example) and restart Metro.',

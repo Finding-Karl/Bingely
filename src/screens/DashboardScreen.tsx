@@ -69,7 +69,7 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <Text style={styles.heading}>Your Lists</Text>
+      <Text style={styles.heading}>Bingely</Text>
       <GenreTabs selected={selectedList} onSelect={setSelectedList} />
       <FlatList
         data={visibleRankings}
@@ -99,10 +99,15 @@ export default function DashboardScreen() {
 function createStyles(colors: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background, paddingTop: spacing.lg },
+    // Playfair Display SemiBold Italic (see assets/fonts/, linked via
+    // react-native.config.js) - matches the app icon's monogram, which uses
+    // the same family. No fontWeight here: the font file itself is the
+    // exact weight/style, setting fontWeight alongside a custom font can
+    // make RN fake-bold or ignore it on some platforms.
     heading: {
       color: colors.text,
-      fontSize: fontSize.xl,
-      fontWeight: '800',
+      fontFamily: 'PlayfairDisplay-SemiBoldItalic',
+      fontSize: fontSize.xxl,
       paddingHorizontal: spacing.lg,
       marginBottom: spacing.md,
     },

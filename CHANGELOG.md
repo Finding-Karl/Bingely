@@ -13,6 +13,44 @@ gets renamed to the new version number and dated, and a fresh empty
 `Unreleased` goes back on top.
 
 ### Added
+- The JS splash (shown while Firebase Auth is initializing) now stays up for
+  at least one second even when auth resolves instantly, instead of flashing
+  by too fast to register as an intentional launch moment. New
+  `src/components/SplashScreen.tsx` (matches the native launch screens' red
+  background + "Bingely" wordmark) replaces the old plain `ActivityIndicator`
+  spinner in `src/navigation/index.tsx`'s `RootSwitch`; a `minDurationElapsed`
+  state gated by a `MIN_SPLASH_DURATION_MS = 1000` timer keeps it visible
+  alongside the existing `initializing` check.
+
+- The splash/launch screen now matches the app icon theme on both
+  platforms, instead of the stock "bingely / Powered by React Native" on
+  white: same brand red (#E5484D) background, with "Bingely" set in
+  Playfair Display SemiBold Italic on iOS (`LaunchScreen.storyboard`,
+  referencing the font already linked in the app-icon PR - custom fonts
+  in a launch screen work because UIAppFonts registers them at the OS
+  level before the app's own code runs) and the same white "b" monogram
+  from the icon on Android (new `drawable/splash_glyph.png` - a
+  transparent version of the icon's glyph - centered over
+  `drawable/launch_screen.xml`'s red layer-list background, wired in via
+  `styles.xml`'s `android:windowBackground`). Android had no launch-screen
+  theming at all before this (plain default background).
+
+- A real app icon: a lowercase "b" set in Playfair Display Italic, white
+  on the app's existing brand red (#E5484D), on both iOS
+  (`AppIcon.appiconset`, all required sizes through the 1024 marketing
+  icon) and Android (legacy `ic_launcher`/`ic_launcher_round` PNGs, all
+  five densities) - there was no icon configured before this (Xcode's
+  asset catalog had empty image slots). The Dashboard header ("Your
+  Lists") is now "Bingely", set in Playfair Display SemiBold Italic - the
+  same family as the icon's monogram, so icon and title read as one
+  identity rather than two unrelated choices. Font files added at
+  `assets/fonts/PlayfairDisplay-{Italic,SemiBoldItalic}.ttf` (sourced from
+  Google Fonts' OFL-licensed release) and linked into both native projects
+  via `npx react-native-asset` (new `react-native.config.js`) - a **native
+  asset, needs a pod install and full rebuild**, same as any other native
+  addition this session; a Metro-only reload won't show either the new
+  icon or the new font.
+
 - Write an optional text review alongside your rating: a multiline field
   under the rating slider on MovieDetailScreen ("Review (optional)", up to
   2000 characters), saved and updated together with the score in the same
@@ -102,6 +140,30 @@ gets renamed to the new version number and dated, and a fresh empty
   `src/components/GenreCard.tsx`, `src/screens/GenreResultsScreen.tsx`.
 
 ### Fixed
+- The JS splash and the native iOS launch screen showed "Bingely" at two
+  noticeably different sizes - the native launch screen (a baked image) at
+  one size, then the JS splash (a live `<Text>` guessing at a font size) at
+  a visibly smaller one, right after the Metro bundle-download screen.
+  `SplashScreen.tsx` now renders the exact same `wordmark.png` used by the
+  iOS launch screen (copied to `src/assets/images/wordmark.png`) at the same
+  220pt width instead of reproducing it as text, so the two are
+  pixel-for-pixel the same size.
+- The iOS launch screen's "Bingely" text didn't actually match the Dashboard
+  header's font, despite both referencing the same
+  `PlayfairDisplay-SemiBoldItalic` - iOS's launch-screen renderer doesn't
+  reliably load `Info.plist`-registered custom fonts on a live `UILabel`
+  before first paint, so it silently fell back to the system font. Fixed the
+  same way the Android splash glyph already was: baked "Bingely" as a
+  pre-rendered image (new `Images.xcassets/wordmark.imageset/wordmark.png`,
+  same font/color as the header) and swapped `LaunchScreen.storyboard`'s
+  `UILabel` for a `UIImageView` referencing it, so there's no runtime font
+  lookup left to fail.
+- The app's display name was lowercase "bingely" under the home screen icon
+  on both platforms (`Info.plist`'s `CFBundleDisplayName`, Android's
+  `strings.xml` `app_name`, and `app.json`'s `displayName`) - now "Bingely",
+  matching the wordmark's capitalization. The icon's own "b" monogram is
+  unchanged.
+
 - The keyboard covered the review text box (and the Save button below it)
   on MovieDetailScreen instead of the screen scrolling to make room -
   Android's `windowSoftInputMode="adjustResize"` (already set) handled
