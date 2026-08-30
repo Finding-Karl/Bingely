@@ -89,6 +89,18 @@ export async function deleteRanking(
   await postgresApi.delete(`/rankings/mine/${mediaType}/${movieId}`);
 }
 
+/**
+ * Reorders a group of the caller's own rankings that share the same score
+ * (a "tie group") - press-and-hold drag on the Dashboard calls this on
+ * drop. `orderedIds` is that group's ranking ids in the new top-to-bottom
+ * order; the backend turns that into `priority` values used as the tie-
+ * break after score in every GET /rankings/* query (see
+ * functions/src/index.ts's POST /rankings/reorder).
+ */
+export async function reorderRankings(orderedIds: string[]): Promise<void> {
+  await postgresApi.post<void>('/rankings/reorder', { orderedIds });
+}
+
 /** The current user's existing rating for a title, or null if they haven't rated it. */
 export async function getRanking(
   _uid: string,

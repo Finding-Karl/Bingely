@@ -1,14 +1,13 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
-import { deleteRanking, getRankings } from '../services/rankings';
+import { deleteRanking, getRankings, reorderRankings } from '../services/rankings';
 import { RankedItem } from '../types/models';
 import { ALL_TIME_LIST_ID } from '../constants/genres';
+import DraggableRankingList from '../components/DraggableRankingList';
 import GenreTabs from '../components/GenreTabs';
-import RankingRow from '../components/RankingRow';
-import SwipeToDelete from '../components/SwipeToDelete';
 import { useAppTheme } from '../context/ThemeContext';
 import { AppColors, fontSize, spacing } from '../theme';
 
@@ -67,18 +66,48 @@ export default function DashboardScreen() {
     });
   };
 
+  // Called once a press-and-hold drag drops within its same-score group
+  // (see DraggableRankingList) - orderedIds is that whole group, top to
+  // bottom. Splice it back into `rankings` at wherever the group currently
+  // sits (same-score rows are always contiguous there, since the backend's
+  // primary sort is score DESC) so the visible order matches what the user
+  // just dropped, immediately and without waiting on the network - same
+  // optimistic-then-fire-and-forget approach as handleDelete, except a
+  // failed reorder isn't rolled back locally: the next focus refetch
+  // simply restores whatever order the backend still has, same as a failed
+  // addRanking's sort position already does.
+  const handleReorder = (orderedIds: string[]) => {
+    setRankings(current => {
+      const byId = new Map(current.map(r => [r.id, r]));
+      const groupSet = new Set(orderedIds);
+      const reordered = orderedIds.map(id => byId.get(id)).filter((r): r is RankedItem => r != null);
+      const next: RankedItem[] = [];
+      let inserted = false;
+      current.forEach(r => {
+        if (groupSet.has(r.id)) {
+          if (!inserted) {
+            next.push(...reordered);
+            inserted = true;
+          }
+        } else {
+          next.push(r);
+        }
+      });
+      return next;
+    });
+    reorderRankings(orderedIds).catch(error => {
+      console.error('reorderRankings failed:', error);
+    });
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <Text style={styles.heading}>Bingely</Text>
       <GenreTabs selected={selectedList} onSelect={setSelectedList} />
-      <FlatList
-        data={visibleRankings}
-        keyExtractor={item => item.id}
-        renderItem={({ item, index }) => (
-          <SwipeToDelete onDelete={() => handleDelete(item)}>
-            <RankingRow item={item} rank={index + 1} />
-          </SwipeToDelete>
-        )}
+      <DraggableRankingList
+        items={visibleRankings}
+        onDelete={handleDelete}
+        onReorder={handleReorder}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.primary} />

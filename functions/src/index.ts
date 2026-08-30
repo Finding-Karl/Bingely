@@ -138,7 +138,7 @@ app.get(
   asyncRoute(async (req, res) => {
     const pool = await getPool();
     const { rows } = await pool.query(
-      'SELECT * FROM rankings WHERE user_id = $1 ORDER BY score DESC',
+      'SELECT * FROM rankings WHERE user_id = $1 ORDER BY score DESC, priority DESC, ranked_at DESC',
       [req.uid],
     );
     res.json(rows);
@@ -153,7 +153,7 @@ app.get(
   asyncRoute(async (req, res) => {
     const pool = await getPool();
     const { rows } = await pool.query(
-      'SELECT * FROM rankings WHERE user_id = $1 ORDER BY score DESC',
+      'SELECT * FROM rankings WHERE user_id = $1 ORDER BY score DESC, priority DESC, ranked_at DESC',
       [req.params.uid],
     );
     res.json(rows);
@@ -221,20 +221,95 @@ app.put(
       reviewToSave = review.trim();
     }
     const pool = await getPool();
+
+    // priority is the tie-break used within a score group (see the GET
+    // routes' ORDER BY, and POST /rankings/reorder below) - drag-and-drop
+    // on the Dashboard is the only thing that ever moves an item within
+    // its group, so a plain save here should never disturb an existing
+    // drag order. Only recompute it when this row is landing in a *new*
+    // tie group: either it doesn't exist yet, or its score just changed
+    // (moving it out of whatever group it used to be in). Either way it
+    // lands at the bottom of the new group (lowest priority there) rather
+    // than jumping above titles the user already placed by hand.
+    const { rows: existingRows } = await pool.query(
+      'SELECT score, priority FROM rankings WHERE user_id = $1 AND movie_id = $2 AND media_type = $3',
+      [req.uid, movieId, mediaType],
+    );
+    const existing = existingRows[0];
+    let priority: number;
+    if (existing && Number(existing.score) === roundedScore) {
+      priority = existing.priority;
+    } else {
+      const { rows: groupRows } = await pool.query(
+        'SELECT MIN(priority) AS min_priority FROM rankings WHERE user_id = $1 AND score = $2',
+        [req.uid, roundedScore],
+      );
+      const minPriority = groupRows[0].min_priority;
+      priority = minPriority === null ? 0 : minPriority - 1;
+    }
+
     const { rows } = await pool.query(
-      `INSERT INTO rankings (user_id, movie_id, media_type, title, poster_path, genre_ids, score, review)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO rankings (user_id, movie_id, media_type, title, poster_path, genre_ids, score, review, priority)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        ON CONFLICT (user_id, movie_id, media_type) DO UPDATE SET
          title = EXCLUDED.title,
          poster_path = EXCLUDED.poster_path,
          genre_ids = EXCLUDED.genre_ids,
          score = EXCLUDED.score,
          review = EXCLUDED.review,
+         priority = EXCLUDED.priority,
          ranked_at = now()
        RETURNING *`,
-      [req.uid, movieId, mediaType, title, posterPath ?? null, genreIds ?? null, roundedScore, reviewToSave],
+      [
+        req.uid,
+        movieId,
+        mediaType,
+        title,
+        posterPath ?? null,
+        genreIds ?? null,
+        roundedScore,
+        reviewToSave,
+        priority,
+      ],
     );
     res.json(rows[0]);
+  }),
+);
+
+// POST /rankings/reorder { orderedIds }
+//
+// Reassigns `priority` for a set of the caller's own rankings, given in the
+// desired top-to-bottom order (orderedIds[0] becomes the highest priority,
+// i.e. sorts first within its score group). This is what the Dashboard's
+// press-and-hold drag calls on drop - the client only ever sends ids drawn
+// from a single same-score group (drag is constrained to same-score
+// neighbors there), but this route doesn't need to assume that: every
+// update is scoped to `id = ... AND user_id = req.uid`, so a client sending
+// ids that span groups (or belong to someone else) can only ever scramble
+// its own data, never anyone else's.
+app.post(
+  '/rankings/reorder',
+  asyncRoute(async (req, res) => {
+    const { orderedIds } = req.body ?? {};
+    if (
+      !Array.isArray(orderedIds) ||
+      orderedIds.length === 0 ||
+      !orderedIds.every((id: unknown) => typeof id === 'string')
+    ) {
+      res.status(400).json({ error: 'orderedIds must be a non-empty array of ranking ids.' });
+      return;
+    }
+    const pool = await getPool();
+    await Promise.all(
+      (orderedIds as string[]).map((id, index) =>
+        pool.query('UPDATE rankings SET priority = $1 WHERE id = $2 AND user_id = $3', [
+          orderedIds.length - 1 - index,
+          id,
+          req.uid,
+        ]),
+      ),
+    );
+    res.status(204).send();
   }),
 );
 

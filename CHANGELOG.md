@@ -13,6 +13,29 @@ gets renamed to the new version number and dated, and a fresh empty
 `Unreleased` goes back on top.
 
 ### Added
+- Press and hold a title on the Dashboard to drag it up or down among others
+  tied at the same rating - a new `priority` column breaks ties within a
+  score (previously same-score titles just fell back to insertion order).
+  Dragging is confined to that same-score group: it can't cross above a
+  higher-rated title or below a lower-rated one, and while dragging, the
+  titles you can currently drop among get a soft red-tinted highlight with a
+  heavier border top and bottom marking where the group actually ends. Built
+  on the same plain PanResponder/Animated approach as swipe-to-delete (new
+  `src/components/DraggableRankingRow.tsx` for the per-row
+  long-press-then-drag gesture, `DraggableRankingList.tsx` for the reorder
+  bookkeeping) - no new native dependency or rebuild needed for this one.
+  New `POST /rankings/reorder` persists the drop; `PUT /rankings` only
+  assigns a fresh priority when a title is landing in a new tie group (new,
+  or its score just changed) - a plain re-save never disturbs an order you
+  already dragged.
+  **Requires a one-time manual DB migration** before deploying:
+  ```sql
+  ALTER TABLE rankings ADD COLUMN priority INTEGER NOT NULL DEFAULT 0;
+  ```
+  (run via `gcloud sql connect bingely-fdc --user=bingely_app --database=fdcdb`,
+  same as the earlier migrations) - then `firebase deploy --only functions`
+  to pick up the priority-aware sort/insert/reorder logic in
+  `functions/src/index.ts`.
 - The JS splash (shown while Firebase Auth is initializing) now stays up for
   at least one second even when auth resolves instantly, instead of flashing
   by too fast to register as an intentional launch moment. New
