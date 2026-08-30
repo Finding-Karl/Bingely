@@ -89,6 +89,44 @@ export async function deleteRanking(
   await postgresApi.delete(`/rankings/mine/${mediaType}/${movieId}`);
 }
 
+export interface FriendReview {
+  uid: string;
+  username: string;
+  displayName: string;
+  score: number;
+  review: string | null;
+  rankedAt: number;
+}
+
+interface FriendRankingRow extends RankingRow {
+  username: string;
+  display_name: string;
+}
+
+function mapFriendRankingRow(row: FriendRankingRow): FriendReview {
+  return {
+    uid: row.user_id,
+    username: row.username,
+    displayName: row.display_name,
+    score: Number(row.score),
+    review: row.review ?? null,
+    rankedAt: new Date(row.ranked_at).getTime(),
+  };
+}
+
+/**
+ * The caller's friends' (people they follow) ratings/reviews for one
+ * specific title, score DESC - powers TitleReviewsScreen's "friends'
+ * reviews" list, reached by tapping a title on the Dashboard.
+ */
+export async function getFriendsRankingsForTitle(
+  mediaType: RankedItem['mediaType'],
+  movieId: number,
+): Promise<FriendReview[]> {
+  const rows = await postgresApi.get<FriendRankingRow[]>(`/rankings/friends/${mediaType}/${movieId}`);
+  return rows.map(mapFriendRankingRow);
+}
+
 /**
  * Reorders a group of the caller's own rankings that share the same score
  * (a "tie group") - press-and-hold drag on the Dashboard calls this on

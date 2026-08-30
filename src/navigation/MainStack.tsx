@@ -5,6 +5,7 @@ import MovieDetailScreen from '../screens/MovieDetailScreen';
 import FriendProfileScreen from '../screens/FriendProfileScreen';
 import GenreResultsScreen from '../screens/GenreResultsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import TitleReviewsScreen from '../screens/TitleReviewsScreen';
 import { MediaType } from '../types/models';
 import { useAppTheme } from '../context/ThemeContext';
 
@@ -13,6 +14,7 @@ export type MainStackParamList = {
   MovieDetail: { id: number; mediaType: MediaType };
   FriendProfile: { uid: string; username: string };
   GenreResults: { genreId: number; genreName: string };
+  TitleReviews: { movieId: number; mediaType: MediaType; title: string; posterPath: string | null };
   Settings: undefined;
 };
 
@@ -39,6 +41,11 @@ export default function MainStack() {
         name="GenreResults"
         component={GenreResultsScreen}
         options={({ route }) => ({ title: route.params.genreName })}
+      />
+      <Stack.Screen
+        name="TitleReviews"
+        component={TitleReviewsScreen}
+        options={{ title: 'Reviews' }}
       />
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
     </Stack.Navigator>

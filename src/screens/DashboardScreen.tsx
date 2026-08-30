@@ -1,7 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 import { deleteRanking, getRankings, reorderRankings } from '../services/rankings';
 import { RankedItem } from '../types/models';
@@ -10,9 +11,11 @@ import DraggableRankingList from '../components/DraggableRankingList';
 import GenreTabs from '../components/GenreTabs';
 import { useAppTheme } from '../context/ThemeContext';
 import { AppColors, fontSize, spacing } from '../theme';
+import type { MainStackParamList } from '../navigation/MainStack';
 
 export default function DashboardScreen() {
   const { user } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [rankings, setRankings] = useState<RankedItem[]>([]);
@@ -100,6 +103,15 @@ export default function DashboardScreen() {
     });
   };
 
+  const handlePressItem = (item: RankedItem) => {
+    navigation.navigate('TitleReviews', {
+      movieId: item.movieId,
+      mediaType: item.mediaType,
+      title: item.title,
+      posterPath: item.posterPath,
+    });
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <Text style={styles.heading}>Bingely</Text>
@@ -108,6 +120,7 @@ export default function DashboardScreen() {
         items={visibleRankings}
         onDelete={handleDelete}
         onReorder={handleReorder}
+        onPressItem={handlePressItem}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.primary} />
