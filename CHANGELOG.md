@@ -13,6 +13,20 @@ gets renamed to the new version number and dated, and a fresh empty
 `Unreleased` goes back on top.
 
 ### Added
+- Tap a title on the Dashboard to open its reviews: your own rating and
+  review, plus what any friends who've also ranked it thought (their rating
+  and review, or "No review written" if they only rated it). New
+  `src/screens/TitleReviewsScreen.tsx`, reached via a new `TitleReviews`
+  stack route; an "Edit" button on your own rating there reopens
+  MovieDetailScreen rather than duplicating the rating/review UI a second
+  time. `RankingRow` gained an optional `onPress` (unused by
+  FriendProfileScreen's read-only list) that a plain tap reaches through
+  both the swipe-to-delete and drag-to-reorder gestures on the Dashboard
+  without either one swallowing it. New
+  `GET /rankings/friends/:mediaType/:movieId` powers the friends list -
+  one joined query (rankings x follows x users) scoped to the caller's
+  own follows, rather than fetching every friend's full list and
+  filtering client-side.
 - Press and hold a title on the Dashboard to drag it up or down among others
   tied at the same rating - a new `priority` column breaks ties within a
   score (previously same-score titles just fell back to insertion order).

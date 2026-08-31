@@ -1,18 +1,28 @@
 import React, { useMemo } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { RankedItem } from '../types/models';
 import { posterUrl } from '../services/tmdb';
 import { useAppTheme } from '../context/ThemeContext';
 import { AppColors, fontSize, radius, spacing } from '../theme';
 
-export default function RankingRow({ item, rank }: { item: RankedItem; rank: number }) {
+interface Props {
+  item: RankedItem;
+  rank: number;
+  // Optional - the Dashboard passes this to open TitleReviewsScreen (see
+  // your review plus what your friends thought); FriendProfileScreen's
+  // read-only list leaves it unset, and the row renders identically either
+  // way other than not being tappable.
+  onPress?: () => void;
+}
+
+export default function RankingRow({ item, rank, onPress }: Props) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const rankColors: Record<number, string> = { 1: colors.gold, 2: colors.silver, 3: colors.bronze };
   const rankColor = rankColors[rank] ?? colors.textMuted;
   const uri = posterUrl(item.posterPath);
 
-  return (
+  const content = (
     <View style={styles.row}>
       <Text style={[styles.rank, { color: rankColor }]}>{rank}</Text>
       {uri ? (
@@ -36,6 +46,9 @@ export default function RankingRow({ item, rank }: { item: RankedItem; rank: num
       </View>
     </View>
   );
+
+  if (!onPress) return content;
+  return <Pressable onPress={onPress}>{content}</Pressable>;
 }
 
 function createStyles(colors: AppColors) {

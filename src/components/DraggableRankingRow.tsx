@@ -26,6 +26,13 @@ interface Props {
   translateY: Animated.Value;
   onLayout: (height: number) => void;
   onDelete: () => void;
+  // Opens TitleReviewsScreen for this title (see the Dashboard) - a plain
+  // tap, not consumed by either gesture below: SwipeToDelete's own
+  // responder only claims for a clearly-horizontal move (or to close an
+  // already-open row), and this component's PanResponder never claims
+  // anything until a long-press has armed it, so a quick tap passes
+  // straight through to RankingRow's own Pressable.
+  onPress?: () => void;
   onDragStart: (item: RankedItem) => void;
   onDragMove: (dy: number) => void;
   onDragEnd: () => void;
@@ -59,6 +66,7 @@ export default function DraggableRankingRow({
   translateY,
   onLayout,
   onDelete,
+  onPress,
   onDragStart,
   onDragMove,
   onDragEnd,
@@ -161,7 +169,7 @@ export default function DraggableRankingRow({
         ]}
       >
         <SwipeToDelete onDelete={onDelete}>
-          <RankingRow item={item} rank={rank} />
+          <RankingRow item={item} rank={rank} onPress={onPress} />
         </SwipeToDelete>
       </Animated.View>
     </View>

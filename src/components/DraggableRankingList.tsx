@@ -26,6 +26,9 @@ interface Props {
   items: RankedItem[];
   onDelete: (item: RankedItem) => void;
   onReorder: (orderedIds: string[]) => void;
+  // Opens TitleReviewsScreen for the tapped title - see DraggableRankingRow
+  // for why this doesn't conflict with the swipe-to-delete/drag gestures.
+  onPressItem?: (item: RankedItem) => void;
   refreshControl?: React.ReactElement<RefreshControlProps>;
   ListEmptyComponent?: React.ComponentProps<typeof FlatList>['ListEmptyComponent'];
   contentContainerStyle?: StyleProp<ViewStyle>;
@@ -51,6 +54,7 @@ export default function DraggableRankingList({
   items,
   onDelete,
   onReorder,
+  onPressItem,
   refreshControl,
   ListEmptyComponent,
   contentContainerStyle,
@@ -189,6 +193,7 @@ export default function DraggableRankingList({
               rowHeights.current[item.id] = height;
             }}
             onDelete={() => onDelete(item)}
+            onPress={onPressItem ? () => onPressItem(item) : undefined}
             onDragStart={handleDragStart}
             onDragMove={handleDragMove}
             onDragEnd={handleDragEnd}

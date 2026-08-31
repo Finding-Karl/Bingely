@@ -188,6 +188,31 @@ app.get(
   }),
 );
 
+// GET /rankings/friends/:mediaType/:movieId - the caller's friends' (people
+// they follow) ratings/reviews for one specific title, for
+// TitleReviewsScreen's "what your friends thought" list. A single joined
+// query rather than the client fetching each friend's whole list and
+// filtering client-side (the fan-out GET /social/following's caller
+// already does for the leaderboard's counts) - worth avoiding here since
+// full review text is a lot heavier to pull per-friend than just a count.
+app.get(
+  '/rankings/friends/:mediaType/:movieId',
+  asyncRoute(async (req, res) => {
+    const movieId = Number(req.params.movieId);
+    const pool = await getPool();
+    const { rows } = await pool.query(
+      `SELECT r.*, u.username, u.display_name
+       FROM rankings r
+       JOIN follows f ON f.followee_id = r.user_id
+       JOIN users u ON u.id = r.user_id
+       WHERE f.follower_id = $1 AND r.media_type = $2 AND r.movie_id = $3
+       ORDER BY r.score DESC, r.ranked_at DESC`,
+      [req.uid, req.params.mediaType, movieId],
+    );
+    res.json(rows);
+  }),
+);
+
 const MAX_REVIEW_LENGTH = 2000;
 
 // PUT /rankings { movieId, mediaType, title, posterPath, genreIds, score, review }
